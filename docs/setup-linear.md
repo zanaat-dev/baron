@@ -67,7 +67,7 @@ first just means you have it ready to paste.
 
 Linear supports the OAuth authorization-code flow with PKCE, so `baron init` signs you in through
 the browser instead of asking for a key, through Baron's own public Linear application ("Baron",
-by Lonca). Nothing to register: `init` offers
+by Zanaat). Nothing to register: `init` offers
 
 ```
 Sign in to linear in your browser instead of pasting a token? (Y/n)
