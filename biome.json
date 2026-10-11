@@ -8,7 +8,8 @@
       "coverage/**",
       ".github/cla-signatures.json",
       "site/.astro/**",
-      "site/src/content/docs/docs/**"
+      "site/src/content/docs/docs/**",
+      "site/regions.json"
     ]
   },
   "formatter": {

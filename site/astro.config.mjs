@@ -10,6 +10,9 @@ export default defineConfig({
   // The docs carry no raster images that need resizing, and sharp is a native dependency this
   // monorepo would otherwise have to install and approve for nothing.
   image: { service: passthroughImageService() },
+  // Fonts ship as their own files rather than data URIs inlined into the CSS: cacheable on their own,
+  // and what the design review's capture requires.
+  vite: { build: { assetsInlineLimit: 0 } },
   integrations: [
     starlight({
       title: 'Baron',
