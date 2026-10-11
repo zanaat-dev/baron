@@ -128,10 +128,10 @@ under the command as a quiet line, the next section heading set at full size, th
 cards set in real text, and the moving card shifted left. The tool's --force check did not accept
 that quote as a comp downgrade, so the gate was left open rather than forced; this file records the
 build as shipped, departures included.
-Scope: this system covers the landing only. The Starlight docs (src/styles/theme.css) still carry
-the older look (Bricolage Grotesque / IBM Plex, amber #d98a24 accent ramp, light and dark themes);
-that is a known divergence, not part of this system. Follow-up: migrate the docs to Funnel Sans /
-Geist Mono and this palette. -->
+Scope: this system is the landing's. The Starlight docs (src/styles/theme.css) speak the same
+language since #269: Funnel Sans / Geist Mono, the warm near-black ground and warm greys, amber as
+the only accent, medium-weight headings, the Baron mark beside a lowercase wordmark. The docs keep a
+light theme for reading (warm paper, a darker amber for contrast); the landing stays dark only. -->
 
 ## Overview
 

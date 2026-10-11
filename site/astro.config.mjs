@@ -18,18 +18,17 @@ export default defineConfig({
       title: 'Baron',
       description:
         'One contract for issues, branches, pull requests, CI and deployments, so a coding agent can write to any work tracker.',
-      logo: { src: './src/assets/mark.svg' },
+      logo: { light: './src/assets/mark-light.svg', dark: './src/assets/mark-dark.svg' },
       favicon: '/favicon.svg',
       social: [{ icon: 'github', label: 'GitHub', href: REPO }],
       // docs/ at the repository root is the source; the site copy is generated (scripts/sync-docs.mjs).
       editLink: { baseUrl: `${REPO}/edit/main/` },
       lastUpdated: false,
       customCss: [
-        '@fontsource-variable/bricolage-grotesque',
-        '@fontsource/ibm-plex-sans/400.css',
-        '@fontsource/ibm-plex-sans/600.css',
-        '@fontsource/ibm-plex-mono/400.css',
-        '@fontsource/ibm-plex-mono/500.css',
+        '@fontsource/funnel-sans/400.css',
+        '@fontsource/funnel-sans/500.css',
+        '@fontsource/geist-mono/400.css',
+        '@fontsource/geist-mono/500.css',
         './src/styles/theme.css',
       ],
       components: { Footer: './src/components/Footer.astro' },
