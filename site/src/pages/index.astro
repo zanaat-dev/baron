@@ -1,58 +1,66 @@
 ---
-import '@fontsource-variable/bricolage-grotesque';
-import '@fontsource/ibm-plex-sans/400.css';
-import '@fontsource/ibm-plex-sans/600.css';
-import '@fontsource/ibm-plex-mono/400.css';
-import '@fontsource/ibm-plex-mono/500.css';
-import '../styles/theme.css';
+import '@fontsource/funnel-sans/400.css';
+import '@fontsource/funnel-sans/500.css';
+import '@fontsource/funnel-sans/600.css';
+import '@fontsource/geist-mono/400.css';
+import '@fontsource/geist-mono/500.css';
 
 const REPO = 'https://github.com/zanaat-dev/baron';
 const NPM = 'https://www.npmjs.com/package/@zanaat/baron-mcp-server';
 const DOCS = '/docs/getting-started/';
+const ITEM = { id: 'STORE-142', title: 'Add rate limiting to the login endpoint' };
 
-const roles = ['backlog', 'ready', 'in_progress', 'in_review', 'done'];
-// Azure is BeeMaster's real mapping; the others are Baron's example maps. A dash is a role that
-// tracker leaves unmapped, which is a normal policy, not a gap.
-const trackers = [
-  { name: 'Azure DevOps', states: ['New', '—', 'Active', 'Test', 'Closed'] },
-  { name: 'Jira', states: ['To Do', '—', 'In Progress', 'In Review', 'Done'] },
-  { name: 'Linear', states: ['Backlog', '—', 'In Progress', 'Code Review', 'Done'] },
-  { name: 'GitHub', states: ['open', '—', 'label: in-progress', 'label: in-review', 'closed'] },
+// Each board shows the tracker's own column names; the card sits in the one its team mapped to
+// in_progress. Illustrative boards, drawn here, not screenshots of the products.
+const boards = [
+  { id: 'azure', name: 'Azure DevOps', short: 'DevOps', cols: ['New', 'Active', 'Test'], hit: 1 },
+  { id: 'jira', name: 'Jira', short: 'Jira', cols: ['To Do', 'In Progress', 'In Review'], hit: 1 },
+  {
+    id: 'linear',
+    name: 'Linear',
+    short: 'Linear',
+    cols: ['Todo', 'In Progress', 'In Review'],
+    hit: 1,
+  },
+  {
+    id: 'github',
+    name: 'GitHub',
+    short: 'GitHub',
+    cols: ['open', 'label: in-progress', 'labels'],
+    hit: 1,
+  },
 ];
-
-const ports = [
+const ROLES = ['backlog', 'ready', 'in_progress', 'in_review', 'done'];
+// The Azure row is a real team's mapping, named anonymously; the rest are Baron's example maps.
+const MAPPINGS = [
+  { name: 'Azure DevOps', note: 'a real team', states: ['New', '—', 'Active', 'Test', 'Closed'] },
+  { name: 'Jira', note: 'example', states: ['To Do', '—', 'In Progress', 'In Review', 'Done'] },
   {
-    port: 'issues',
-    tools: ['baron_issue_read', 'baron_issue_write', 'baron_issue_move'],
-    what: 'Create, update, link, assign, comment, move by role, block and unblock.',
+    name: 'Linear',
+    note: 'example',
+    states: ['Backlog', '—', 'In Progress', 'Code Review', 'Done'],
   },
   {
-    port: 'scm',
-    tools: ['baron_scm_read', 'baron_scm_write'],
-    what: 'Cut branches, open pull requests linked to the item, mark ready, merge.',
+    name: 'GitHub',
+    note: 'example',
+    states: ['open', '—', 'label: in-progress', 'label: in-review', 'closed'],
   },
-  {
-    port: 'ci',
-    tools: ['baron_ci_read', 'baron_ci_run'],
-    what: 'List pipelines and runs, read logs, trigger and cancel.',
-  },
-  {
-    port: 'deploy',
-    tools: ['baron_deploy_read'],
-    what: 'Environments and what was deployed where.',
-  },
-  { port: 'notify', tools: ['baron_notify_send'], what: 'Post to a channel or a thread.' },
 ];
-
-const providers = [
-  { name: 'Azure DevOps', binds: 'issues · scm · ci · deploy' },
-  { name: 'GitHub', binds: 'issues · scm · ci · deploy' },
-  { name: 'Jira Cloud', binds: 'issues' },
-  { name: 'Linear', binds: 'issues' },
-  { name: 'Slack', binds: 'notify' },
+const GAPS = [
+  {
+    mode: 'error',
+    text: 'Stop with an actionable message. A board column the item cannot take is refused before anything is written.',
+  },
+  {
+    mode: 'emulate:labels',
+    text: 'Synthesize it. GitHub has no native parent and child, so the hierarchy rides a parent:<id> label.',
+  },
+  {
+    mode: 'degrade',
+    text: 'Skip it and log a warning. A sprint asked of a tracker without sprints is skipped, and the warning says so.',
+  },
 ];
-
-const recipes = [
+const RECIPES = [
   { name: 'task-new', does: 'Files the item with its type and parent.' },
   {
     name: 'task-start',
@@ -60,364 +68,627 @@ const recipes = [
   },
   {
     name: 'task-finish',
-    does: 'Opens a draft PR linked to the item, and warns if the link did not land.',
+    does: 'Opens a draft PR linked to the item, and says so if the link did not land.',
   },
   {
     name: 'task-land',
     does: 'Refuses red or pending checks, takes the PR out of draft, merges it.',
   },
 ];
+const TRANSCRIPT = `Baron  ▸ runs the task-start recipe as a single call:
+  ✓ Loaded ${'STORE-142'} "${'Add rate limiting to the login endpoint'}"  (type role: task)
+  ✓ Checked it: not done, has a canonical branch, not assigned to someone else
+  ✓ Branched feature/STORE-142 from the repo's default branch
+  ✓ Moved STORE-142 → in_progress, assigned to you
+  ✓ Commented on the item: "Started work — on branch feature/STORE-142."`;
+const replies = [
+  `Branched feature/${ITEM.id}`,
+  `Moved ${ITEM.id} to in_progress`,
+  'Assigned to you',
+  'Linked the pull request',
+];
 ---
 
-<html lang="en" data-theme="dark">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Baron: let your coding agent write to your work tracker</title>
-    <meta name="description" content="Baron is an open-source layer that turns issues, branches, pull requests, CI runs and deployments into one contract, across Azure DevOps, GitHub, Jira, Linear and Slack." />
+    <meta
+      name="description"
+      content="Baron is an open-source layer that turns issues, branches, pull requests, CI runs and deployments into one contract, across Azure DevOps, GitHub, Jira, Linear and Slack."
+    />
+    <meta name="color-scheme" content="dark" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt" />
-    <script is:inline>
-      // Same storage key and resolution as Starlight, so the docs and this page agree on a theme.
-      try {
-        const stored = localStorage.getItem('starlight-theme');
-        const theme = stored === 'light' || stored === 'dark'
-          ? stored
-          : matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-        document.documentElement.dataset.theme = theme;
-      } catch {}
-    </script>
   </head>
   <body>
-    <header class="top">
-      <a class="brand" href="/" aria-label="Baron home">
-        <span class="stops" aria-hidden="true"><i></i><i></i><b></b><i></i><i></i></span>
-        baron
-      </a>
-      <nav aria-label="Primary">
-        <a href={DOCS} data-key="d"><kbd>D</kbd> Docs</a>
-        <a href={REPO} data-key="g"><kbd>G</kbd> GitHub</a>
-        <a href={NPM} data-key="n"><kbd>N</kbd> npm</a>
-      </nav>
-    </header>
+    <div class="stage">
+      <header class="nav">
+        <a class="wordmark" href="/" aria-label="Baron home">baron</a>
+        <nav class="links" aria-label="Primary">
+          <a href={DOCS}>Docs</a>
+          <a href={REPO}>GitHub</a>
+          <a href={NPM}>npm</a>
+        </nav>
+        <a class="cta" href={DOCS}>Get started</a>
+      </header>
 
-    <main>
-      <section class="hero">
-        <p class="eyebrow">Work orchestration for AI coding agents · Apache-2.0</p>
-        <h1>Let your coding agent write to your work tracker.</h1>
-        <p class="sub">
-          One contract for issues, branches, pull requests, CI and deployments. Your agent speaks
-          roles; Baron speaks Azure DevOps, GitHub, Jira, Linear and Slack, and keeps the flow when you
-          change trackers.
-        </p>
-        <div class="cta">
-          <div class="cmd">
-            <code id="init-cmd">npx @zanaat/baron-cli init</code>
-            <button type="button" class="copy" data-copy="init-cmd" aria-label="Copy the init command">Copy</button>
-          </div>
-          <a class="button" href={DOCS}>Read the docs</a>
+      <section class="hero" aria-labelledby="hero-title">
+        <h1 id="hero-title"><span>Let your coding agent</span> <span>write to your work tracker.</span></h1>
+        <p class="subhead">Your agent speaks roles. Baron speaks Azure DevOps, GitHub, Jira and Linear.</p>
+        <div class="command">
+          <code id="init-cmd">npx @zanaat/baron-cli init</code>
+          <button type="button" class="copy" data-copy="init-cmd" aria-label="Copy the init command">
+            <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><rect x="5" y="5" width="9" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"></rect><path d="M11 3.5V3a1.5 1.5 0 0 0-1.5-1.5h-6A1.5 1.5 0 0 0 2 3v6A1.5 1.5 0 0 0 3.5 10.5H4" fill="none" stroke="currentColor" stroke-width="1.4"></path></svg>
+            <span>copy</span>
+          </button>
         </div>
+        <a class="docs-link" href={DOCS}>Read the docs</a>
+        <p class="license">Open source · Apache-2.0</p>
       </section>
 
-      <figure class="rail" aria-labelledby="rail-cap">
-        <div class="rail-head">
-          <span class="fig">FIG. 1</span>
-          <span id="rail-cap">One item, four trackers, one vocabulary.</span>
-        </div>
-        <div class="rail-scroll">
-          <div class="rail-grid" style={`--cols: ${roles.length}`}>
-            <span class="who">Baron role</span>
-            {roles.map((role, i) => (
-              <button type="button" class="role" data-col={i} aria-pressed={i === 2 ? 'true' : 'false'}>
-                {role}
-              </button>
-            ))}
-            {trackers.map((t) => (
-              <>
-                <span class="who">{t.name}</span>
-                {t.states.map((s, i) => (
-                  <span class:list={['native', { unmapped: s === '—', on: i === 2 }]} data-col={i}>{s}</span>
-                ))}
-              </>
-            ))}
+      <figure class="scene" aria-label={`An agent starts ${ITEM.id}; the same card moves in four trackers.`}>
+        <div class="scene-inner">
+        <div class="agent">
+          <p class="agent-title">Agent session</p>
+          <p class="user-msg">Start work on {ITEM.id}</p>
+          <div class="reply">
+            <span class="avatar" aria-hidden="true"></span>
+            <ul>
+              {replies.map((r) => (
+                <li>
+                  <svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                  {r}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-        <figcaption>
-          The agent asks for a role; each tracker gets its own state. Pick a role to stop the walk. You
-          confirm this mapping once with <code>baron init</code> and commit it with your repo, so the model
-          never guesses it again. Azure shows a real team's mapping; the others are Baron's examples. A dash is a role
-          that tracker leaves unmapped.
-        </figcaption>
+
+        <div class="boards" aria-hidden="true">
+          {boards.map((b) => (
+            <div class={`board board-${b.id}`}>
+              <div class="board-head">
+                <span>{b.short}</span>
+                <span class="head-ghost"></span>
+              </div>
+              <div class="cols">
+                {b.cols.map((c, ci) => (
+                  <div class:list={['col', { hit: ci === b.hit }]}>
+                    <span class="col-name">{c}</span>
+                    {ci === b.hit && (
+                      <span class="col-card">
+                        <span class="card-id">{ITEM.id}</span>
+                        <span class="card-title">{ITEM.title}</span>
+                      </span>
+                    )}
+                    <span class="ghost"><i></i></span>
+                    <span class="ghost short"><i></i></span>
+                    <span class="ghost"><i></i></span>
+                  </div>
+                ))}
+              </div>
+              <span class="board-label">{b.name}</span>
+            </div>
+          ))}
+          {boards.map((b) => (
+            <div class={`card card-${b.id}`}>
+              <span class="card-id">{ITEM.id}</span>
+              <span class="card-title">{ITEM.title}</span>
+            </div>
+          ))}
+          <div class="card card-moving">
+            <span class="card-id">{ITEM.id}</span>
+            <span class="card-title">{ITEM.title}</span>
+          </div>
+          <canvas class="traces"></canvas>
+        </div>
+        </div>
       </figure>
 
-      <section class="band">
-        <div class="band-head">
-          <p class="eyebrow">Ports</p>
-          <h2>Each capability binds to a provider on its own.</h2>
-          <p>Issues on Azure DevOps, pull requests on GitHub and notifications on Slack is an ordinary setup, not a special case.</p>
+    </div>
+
+    <main class="flow">
+      <section class="panel contract" aria-labelledby="contract-title">
+        <div class="lede">
+          <h2 id="contract-title">One contract. Every tracker.</h2>
+          <p>
+            The agent asks for a role. Each tracker gets its own state. Your team confirms the mapping once,
+            at <code>baron init</code>, and commits it with the repo, so the model never guesses it again.
+          </p>
         </div>
-        <ul class="ports">
-          {ports.map((p) => (
-            <li>
-              <span class="port">{p.port}</span>
-              <p>{p.what}</p>
-              <span class="tools">{p.tools.join('  ')}</span>
-            </li>
-          ))}
-        </ul>
-        <ul class="providers" aria-label="Supported providers">
-          {providers.map((p) => (
-            <li><b>{p.name}</b><span>{p.binds}</span></li>
-          ))}
-        </ul>
+        <div class="table-wrap">
+          <table class="roles">
+            <caption>How one role lands in four trackers</caption>
+            <thead>
+              <tr>
+                <th scope="col">Tracker</th>
+                {ROLES.map((r) => <th scope="col" class:list={{ on: r === 'in_progress' }}>{r}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {MAPPINGS.map((m) => (
+                <tr>
+                  <th scope="row">{m.name}<span>{m.note}</span></th>
+                  {m.states.map((s, i) => (
+                    <td data-role={ROLES[i]} class:list={{ on: ROLES[i] === 'in_progress', none: s === '—' }}>{s}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p class="aside">
+          A dash is a role that tracker leaves unmapped. Why a tracker cannot be normalized by mapping four states
+          onto everything: <a href="https://dev.to/keparlak/you-cant-set-a-status-in-jira-4d7p">You can't set a status in Jira</a>.
+        </p>
       </section>
 
-      <section class="band">
-        <div class="band-head">
-          <p class="eyebrow">Capability gaps</p>
-          <h2>When a tracker cannot do something, you hear about it.</h2>
-          <p>Every gap is decided by a policy you set. None is dropped quietly.</p>
-        </div>
-        <div class="gaps">
-          <article>
-            <code>error</code>
-            <p>Stop with an actionable message. A Kanban column the item cannot take is refused before anything is written.</p>
-          </article>
-          <article>
-            <code>emulate:labels</code>
-            <p>Synthesize it. GitHub has no native parent and child, so the hierarchy rides a <code>parent:&lt;id&gt;</code> label.</p>
-          </article>
-          <article>
-            <code>degrade</code>
-            <p>Skip it and log a warning. A sprint asked of a tracker without sprints is skipped, and the warning says so.</p>
-          </article>
-        </div>
+      <section class="band" aria-labelledby="gaps-title">
+        <h2 id="gaps-title">When a tracker can't, you hear about it.</h2>
+        <p class="band-lede">Every capability gap is decided by a policy you set. None is dropped quietly.</p>
+        <dl class="gaps">
+          {GAPS.map((g) => (
+            <div>
+              <dt><code>{g.mode}</code></dt>
+              <dd>{g.text}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
-      <section class="band">
-        <div class="band-head">
-          <p class="eyebrow">Recipes</p>
-          <h2>The daily loop is four calls.</h2>
-          <p>Workflow opinion lives in declarative recipes, not in prompts and not in the core. Each runs as one journaled call, and a run that stops halfway resumes where it stopped.</p>
+      <section class="band loop" aria-labelledby="loop-title">
+        <div class="loop-text">
+          <h2 id="loop-title">The daily loop is four calls.</h2>
+          <p class="band-lede">
+            Workflow lives in declarative recipes, not in prompts. Each runs as one journaled call that checks
+            before it writes, and a run that stops halfway resumes where it stopped.
+          </p>
+          <ol class="recipes">
+            {RECIPES.map((r) => (
+              <li><code>{r.name}</code><span>{r.does}</span></li>
+            ))}
+          </ol>
         </div>
-        <ol class="recipes">
-          {recipes.map((r) => (
-            <li><code>{r.name}</code><span>{r.does}</span></li>
-          ))}
-        </ol>
-        <figure class="demo">
-          <img src="/demo/baron-demo.gif" width="910" height="595" loading="lazy" decoding="async" alt="A terminal recording of Baron running task-start and then task-finish against a real tracker." />
+        <figure class="transcript" aria-label="What task-start prints">
+          <figcaption>You: Start work on {ITEM.id}.</figcaption>
+          <pre><code>{TRANSCRIPT}</code></pre>
         </figure>
       </section>
 
-      <section class="band install">
-        <div class="band-head">
-          <p class="eyebrow">Install</p>
-          <h2>Two ways in.</h2>
-        </div>
+      <section class="band install" aria-labelledby="install-title">
+        <h2 id="install-title">Two ways in.</h2>
         <div class="paths">
-          <article>
-            <h3>Claude Code plugin</h3>
-            <pre><code>/plugin marketplace add zanaat-dev/baron
+          <div class="path">
+            <div class="path-head">
+              <h3>Claude Code plugin</h3>
+              <button type="button" class="copy" data-copy="plugin-cmd" aria-label="Copy the plugin commands"><span>copy</span></button>
+            </div>
+            <pre><code id="plugin-cmd">/plugin marketplace add <span class="nb">zanaat-dev/baron</span>
 /plugin install baron@baron</code></pre>
-          </article>
-          <article>
-            <h3>Any MCP client</h3>
-            <pre><code>npx -y @zanaat/baron-mcp-server@latest</code></pre>
+          </div>
+          <div class="path">
+            <div class="path-head">
+              <h3>Any MCP client</h3>
+              <button type="button" class="copy" data-copy="mcp-cmd" aria-label="Copy the MCP server command"><span>copy</span></button>
+            </div>
+            <pre><code id="mcp-cmd">npx -y @zanaat/baron-mcp-server@latest</code></pre>
             <p>Listed in the official MCP Registry as <code>io.github.zanaat-dev/baron</code>.</p>
-          </article>
+          </div>
         </div>
+        <a class="docs-cta" href={DOCS}>Read the getting started guide</a>
       </section>
     </main>
 
     <footer class="foot">
       <span>Apache-2.0 · a <a href="https://zanaat.dev">zanaat</a> project</span>
-      <span><a href={REPO}>GitHub</a> · <a href={NPM}>npm</a> · <a href="/llms.txt">llms.txt</a></span>
+      <nav aria-label="Footer">
+        <a href={REPO}>GitHub</a>
+        <a href={NPM}>npm</a>
+        <a href="/llms.txt">llms.txt</a>
+      </nav>
     </footer>
 
     <script>
-      const roles = [...document.querySelectorAll<HTMLButtonElement>('.role')];
-      const cells = [...document.querySelectorAll<HTMLElement>('.native')];
-      let col = 2;
-      let timer: number | undefined;
+      const canvas = document.querySelector<HTMLCanvasElement>('.traces');
+      const stage = document.querySelector<HTMLElement>('.stage');
+      const agent = document.querySelector<HTMLElement>('.agent');
+      const onScreen = () =>
+        [...document.querySelectorAll<HTMLElement>('.card, .col-card')].filter((el) => el.getClientRects().length > 0);
+      let targets = onScreen();
 
-      function show(next: number) {
-        col = next;
-        for (const r of roles) r.setAttribute('aria-pressed', String(Number(r.dataset.col) === col));
-        for (const c of cells) c.classList.toggle('on', Number(c.dataset.col) === col);
-      }
-
-      // The rail walks the roles on its own until someone picks one, unless motion is unwanted.
-      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        timer = window.setInterval(() => show((col + 1) % roles.length), 2200);
-      }
-      for (const r of roles) {
-        r.addEventListener('click', () => {
-          window.clearInterval(timer);
-          show(Number(r.dataset.col));
+      // Traces are computed from where the cards actually render, so they stay attached at any width.
+      // progress[i] is how much of trace i is drawn, 0..1.
+      function draw(progress: number[] = targets.map(() => 1)) {
+        if (!canvas || !stage || !agent) return;
+        targets = onScreen();
+        const box = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.round(box.width * dpr);
+        canvas.height = Math.round(box.height * dpr);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.scale(dpr, dpr);
+        const a = agent.getBoundingClientRect();
+        // On narrow screens the panel sits above the boards, so the light leaves from its lower edge.
+        const above = a.bottom <= box.top + 1;
+        const sx = above ? a.left + a.width * 0.5 - box.left : a.right - box.left;
+        const sy = above ? 0 : a.top + a.height * 0.57 - box.top;
+        targets.forEach((t, i) => {
+          const p = progress[i] ?? 1;
+          if (p <= 0) return;
+          const r = t.getBoundingClientRect();
+          const ex = r.left - box.left + r.width * 0.06;
+          const ey = r.top - box.top + r.height * 0.55;
+          const c1x = above ? sx : sx + (ex - sx) * 0.45;
+          const c2x = above ? ex : ex - (ex - sx) * 0.35;
+          const at = (u: number, a0: number, a1: number, a2: number, a3: number) =>
+            (1 - u) ** 3 * a0 + 3 * (1 - u) ** 2 * u * a1 + 3 * (1 - u) * u ** 2 * a2 + u ** 3 * a3;
+          const grad = ctx.createLinearGradient(sx, sy, ex, ey);
+          grad.addColorStop(0, 'rgba(240, 168, 72, 0.95)');
+          grad.addColorStop(1, 'rgba(232, 150, 58, 0.7)');
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 1.4;
+          ctx.shadowColor = 'rgba(240, 160, 60, 0.75)';
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.moveTo(sx, sy);
+          const steps = Math.max(2, Math.round(48 * p));
+          for (let s = 1; s <= steps; s++) {
+            const u = (s / steps) * p;
+            const c1y = above ? sy + (ey - sy) * 0.5 : sy;
+            const c2y = above ? ey - (ey - sy) * 0.3 : ey;
+            ctx.lineTo(at(u, sx, c1x, c2x, ex), at(u, sy, c1y, c2y, ey));
+          }
+          ctx.stroke();
         });
       }
 
+      // The one authored moment: the agent's reply travels out, trace by trace, and each card lights
+      // as its trace arrives. Cards are visible from the start; only the light is animated.
+      const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let settled = still;
+      if (still) for (const t of document.querySelectorAll('.card, .col-card')) t.classList.add('lit');
+      function play() {
+        if (settled) return draw();
+        const start = performance.now();
+        const span = 900;
+        const gap = 140;
+        const ease = (x: number) => (x >= 1 ? 1 : 1 - 2 ** (-10 * x));
+        const tick = (now: number) => {
+          const progress = targets.map((_, i) => ease(Math.max(0, (now - start - i * gap) / span)));
+          progress.forEach((p, i) => targets[i]?.classList.toggle('lit', p > 0.97));
+          draw(progress);
+          if (progress.every((p) => p >= 1)) {
+            settled = true;
+            return;
+          }
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
+      window.addEventListener('resize', () => draw());
+      (document.fonts?.ready ?? Promise.resolve()).then(play);
+
       for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
+        const label = button.querySelector('span');
         button.addEventListener('click', async () => {
           const text = document.getElementById(button.dataset.copy ?? '')?.textContent ?? '';
           try {
             await navigator.clipboard.writeText(text);
-            button.textContent = 'Copied';
+            if (label) label.textContent = 'copied';
           } catch {
-            button.textContent = 'Select it';
+            if (label) label.textContent = 'select it';
           }
-          window.setTimeout(() => (button.textContent = 'Copy'), 1600);
+          window.setTimeout(() => label && (label.textContent = 'copy'), 1600);
         });
       }
-
-      document.addEventListener('keydown', (e) => {
-        if (e.metaKey || e.ctrlKey || e.altKey) return;
-        const target = e.target as HTMLElement;
-        if (target.closest('input, textarea, [contenteditable]')) return;
-        const link = document.querySelector<HTMLAnchorElement>(`a[data-key="${e.key.toLowerCase()}"]`);
-        if (link) link.click();
-      });
     </script>
 
     <style is:global>
-      * { box-sizing: border-box; }
-      html { background: var(--baron-ink); }
-      body {
-        margin: 0;
-        background: var(--baron-ink);
-        color: var(--baron-text);
-        font-family: var(--sl-font);
-        font-size: 16px;
-        line-height: 1.6;
+      :root {
+        --ground: #0e0e0f;
+        --ink: #ecebe5;
+        --muted: #948d86;
+        --quiet: #8a8580;
+        --amber: #e8a13a;
+        --sans: 'Funnel Sans', 'Segoe UI', system-ui, sans-serif;
+        --mono: 'Geist Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+        /* One comp pixel at the comp's 1024px width; the first viewport scales as a whole. */
+        --u: calc(min(100vw, 1640px) / 1024);
+        color-scheme: dark;
       }
-      a { color: var(--baron-signal); text-underline-offset: 3px; }
-      a:focus-visible, button:focus-visible { outline: 2px solid var(--baron-signal); outline-offset: 3px; }
-      code, pre, kbd { font-family: var(--sl-font-mono); }
-      h1, h2, h3 { margin: 0; }
-      p { margin: 0; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: var(--ground); }
+      body { color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+      ::selection { background: var(--amber); color: #111; }
+      a { color: inherit; }
+      a:focus-visible, button:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 4px; }
+      h1, h2, p { margin: 0; }
     </style>
 
     <style>
-      .top, main, .foot { max-width: 1120px; margin-inline: auto; padding-inline: 20px; }
-      .top {
-        display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between;
-        padding-block: 18px;
+      .stage {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1024 / 687;
+        overflow: hidden;
+        background:
+          radial-gradient(ellipse 70% 60% at 66% 6%, rgba(66, 65, 63, 0.8), transparent 72%),
+          radial-gradient(ellipse 50% 40% at 30% 0%, rgba(54, 50, 46, 0.45), transparent 75%),
+          var(--ground);
       }
-      .brand {
-        display: inline-flex; gap: 10px; align-items: center;
-        font-family: var(--sl-font-mono); font-weight: 500; font-size: 1.1rem; color: var(--baron-text); text-decoration: none;
-      }
-      .stops { display: inline-flex; gap: 2px; align-items: center; }
-      .stops i { width: 4px; height: 4px; border-radius: 1px; background: var(--baron-muted); opacity: 0.6; }
-      .stops b { width: 5px; height: 12px; border-radius: 1.5px; background: var(--baron-signal); }
-      nav { display: flex; flex-wrap: wrap; gap: 6px; }
-      nav a {
-        display: inline-flex; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 6px;
-        font-family: var(--sl-font-mono); font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase;
-        color: var(--baron-text); text-decoration: none; background: var(--baron-surface); border: 1px solid var(--baron-line);
-      }
-      nav a:hover { border-color: var(--baron-signal); }
-      kbd { font-size: 0.72rem; color: var(--baron-signal); }
+      .stage > * { position: absolute; }
+      /* A composited layer renders text with grayscale antialiasing, as the comp does, instead of colour-fringed subpixel text. */
+      .stage { will-change: transform; }
+      .nav, .hero, .agent { transform: translateZ(0); }
 
-      main { display: grid; gap: 88px; padding-block: 48px 96px; }
-      .eyebrow {
-        font-family: var(--sl-font-mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase;
-        color: var(--baron-muted);
+      .nav { inset: 0 0 auto 0; height: calc(58 * var(--u)); }
+      .wordmark {
+        position: absolute; left: calc(104 * var(--u)); top: calc(13 * var(--u));
+        font-size: calc(27 * var(--u)); font-weight: 400; color: #dddbda; text-decoration: none; letter-spacing: -0.01em;
       }
-      .hero { display: grid; gap: 22px; }
-      .hero h1 {
-        font-family: var(--baron-display); font-weight: 700; letter-spacing: -0.03em; line-height: 1.02;
-        font-size: clamp(2.4rem, 7vw, 5.2rem); max-width: 14ch; text-wrap: balance;
+      .links { position: absolute; left: calc(682 * var(--u)); top: calc(20 * var(--u)); display: flex; gap: calc(19 * var(--u)); }
+      .links a { font-size: calc(13 * var(--u)); color: var(--quiet); text-decoration: none; font-weight: 500; }
+      .links a:hover { color: var(--ink); }
+      .cta {
+        position: absolute; left: calc(833 * var(--u)); top: calc(15 * var(--u)); width: calc(86 * var(--u)); height: calc(29 * var(--u));
+        display: grid; place-items: center; background: #3a3937; border: 1px solid #575551; border-radius: calc(7 * var(--u));
+        font-size: calc(13 * var(--u)); color: #dcdcda; text-decoration: none; font-weight: 500;
       }
-      .sub { font-size: clamp(1.05rem, 2vw, 1.25rem); color: var(--baron-muted); max-width: 60ch; }
-      .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-      .cmd {
-        display: inline-flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; border-radius: 8px;
-        background: var(--baron-surface); border: 1px solid var(--baron-line); max-width: 100%;
-      }
-      .cmd code { font-size: 0.95rem; overflow-x: auto; white-space: nowrap; }
-      .copy, .button {
-        font: 500 0.85rem var(--sl-font-mono); padding: 8px 14px; border-radius: 6px; cursor: pointer; text-decoration: none;
-      }
-      .copy { background: transparent; color: var(--baron-text); border: 1px solid var(--baron-line); }
-      .copy:hover { border-color: var(--baron-signal); }
-      .button { background: var(--baron-signal); color: var(--baron-ink); border: 1px solid var(--baron-signal); }
+      .cta:hover { border-color: var(--amber); }
 
-      .rail { margin: 0; display: grid; gap: 14px; }
-      .rail-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; }
-      .fig { font-family: var(--sl-font-mono); font-size: 0.75rem; letter-spacing: 0.08em; color: var(--baron-signal); }
-      #rail-cap { font-family: var(--baron-display); font-size: 1.3rem; font-weight: 600; }
-      .rail-scroll { overflow-x: auto; border: 1px solid var(--baron-line); border-radius: 12px; background: var(--baron-surface); }
-      .rail-grid {
-        display: grid; grid-template-columns: 130px repeat(var(--cols), minmax(132px, 1fr));
-        gap: 8px; padding: 18px; min-width: 820px; align-items: center;
+      .hero { inset: 0; pointer-events: none; }
+      .hero > * { position: absolute; pointer-events: auto; }
+      /* The license rides beside the docs link: the floor bans a label above the headline. */
+      .license { left: calc(105 * var(--u)); top: calc(314 * var(--u)); font-size: calc(11.5 * var(--u)); color: var(--quiet); white-space: nowrap; }
+      h1 span { display: block; }
+      h1 {
+        left: calc(104 * var(--u)); top: calc(124 * var(--u)); width: calc(560 * var(--u));
+        font-size: calc(47 * var(--u)); line-height: 0.99; font-weight: 500; letter-spacing: -0.012em; color: var(--ink);
       }
-      .who { font-family: var(--sl-font-mono); font-size: 0.8rem; color: var(--baron-muted); }
-      .role, .native {
-        font-family: var(--sl-font-mono); font-size: 0.85rem; text-align: center; padding: 9px 8px; border-radius: 7px;
-        transition: background-color 0.35s, border-color 0.35s, color 0.35s;
+      .subhead { left: calc(105 * var(--u)); top: calc(228 * var(--u)); font-size: calc(15.8 * var(--u)); color: var(--muted); white-space: nowrap; }
+      .command {
+        left: calc(104 * var(--u)); top: calc(268 * var(--u)); width: calc(262 * var(--u)); height: calc(33 * var(--u));
+        display: flex; align-items: center; justify-content: space-between; padding: 0 calc(10 * var(--u));
+        background: #171718; border: 1px solid #2f2f30; border-radius: calc(6 * var(--u));
       }
-      .role {
-        cursor: pointer; color: var(--baron-signal); background: var(--baron-signal-soft);
-        border: 1px solid transparent; font-weight: 500;
+      .command code { font-family: var(--mono); font-size: calc(12.2 * var(--u)); color: #d4d4d2; white-space: nowrap; }
+      .copy {
+        display: inline-flex; align-items: center; gap: calc(4 * var(--u)); background: none; border: 0; padding: 0; cursor: pointer;
+        font: 400 calc(11 * var(--u)) var(--sans); color: #8d8d8b;
       }
-      .role[aria-pressed='true'] { background: var(--baron-signal); color: var(--baron-ink); }
-      .native { color: var(--baron-muted); border: 1px dashed var(--baron-line); }
-      .native.on { color: var(--baron-text); border: 1px solid var(--baron-signal); }
-      .native.unmapped.on { border-style: dashed; color: var(--baron-muted); }
-      .rail figcaption { color: var(--baron-muted); font-size: 0.95rem; max-width: 72ch; }
-      @media (prefers-reduced-motion: reduce) {
-        .role, .native { transition: none; }
+      .copy svg { width: calc(11 * var(--u)); height: calc(11 * var(--u)); }
+      .copy:hover { color: var(--ink); }
+      .docs-link { left: calc(369 * var(--u)); top: calc(277 * var(--u)); font-size: calc(12.2 * var(--u)); color: #a3a3a0; text-underline-offset: calc(4 * var(--u)); text-decoration-thickness: calc(1.4 * var(--u)); }
+      .docs-link:hover { color: var(--ink); }
+
+      .scene { inset: 0; margin: 0; pointer-events: none; }
+      .scene-inner { position: absolute; inset: 0; }
+      .agent {
+        position: absolute; left: calc(104 * var(--u)); top: calc(385 * var(--u)); width: calc(269 * var(--u)); height: calc(169 * var(--u));
+        background: #1e1e1f; border: 1px solid #333335; border-radius: calc(8 * var(--u));
+        box-shadow: 0 calc(18 * var(--u)) calc(40 * var(--u)) rgba(0, 0, 0, 0.45);
       }
-
-      .band { display: grid; gap: 28px; }
-      .band-head { display: grid; gap: 10px; max-width: 70ch; }
-      .band-head h2 { font-family: var(--baron-display); font-size: clamp(1.6rem, 3.4vw, 2.4rem); letter-spacing: -0.02em; line-height: 1.1; text-wrap: balance; }
-      .band-head > p:last-child { color: var(--baron-muted); }
-
-      .ports { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; background: var(--baron-line); border: 1px solid var(--baron-line); border-radius: 12px; overflow: hidden; }
-      .ports li { background: var(--baron-ink); padding: 20px; display: grid; gap: 10px; align-content: start; min-width: 0; }
-      .port { font-family: var(--sl-font-mono); color: var(--baron-signal); font-weight: 500; }
-      .ports p { font-size: 0.95rem; }
-      .tools { font-family: var(--sl-font-mono); font-size: 0.72rem; color: var(--baron-muted); word-break: break-word; }
-      .providers { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
-      .providers li { display: inline-flex; gap: 10px; align-items: baseline; padding: 8px 12px; border: 1px solid var(--baron-line); border-radius: 999px; }
-      .providers span { font-family: var(--sl-font-mono); font-size: 0.75rem; color: var(--baron-muted); }
-
-      .gaps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
-      .gaps article { display: grid; gap: 10px; align-content: start; padding-top: 14px; border-top: 2px solid var(--baron-line); }
-      .gaps article > code { color: var(--baron-signal); font-size: 0.95rem; }
-      .gaps p { color: var(--baron-muted); font-size: 0.95rem; }
-      .gaps p code { color: var(--baron-text); font-size: 0.85em; }
-
-      .recipes { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 0; border-left: 2px solid var(--baron-line); }
-      .recipes li { counter-increment: step; display: grid; grid-template-columns: 150px 1fr; gap: 16px; padding: 12px 0 12px 20px; position: relative; }
-      .recipes li::before {
-        content: counter(step); position: absolute; left: -11px; top: 14px; width: 20px; height: 20px; border-radius: 50%;
-        background: var(--baron-ink); border: 2px solid var(--baron-signal); color: var(--baron-signal);
-        font: 500 0.7rem/16px var(--sl-font-mono); text-align: center;
+      .agent-title { position: absolute; left: calc(10 * var(--u)); top: calc(7 * var(--u)); font-size: calc(11.5 * var(--u)); color: #9a9a9c; }
+      .agent::before { content: ''; position: absolute; left: 0; right: 0; top: calc(25 * var(--u)); border-top: 1px solid #2b2b2d; }
+      .user-msg {
+        position: absolute; right: calc(9 * var(--u)); top: calc(37 * var(--u)); padding: calc(6 * var(--u)) calc(10 * var(--u));
+        background: #38383a; border-radius: calc(8 * var(--u)); font-size: calc(11.5 * var(--u)); color: #d9d9d7;
       }
-      .recipes code { color: var(--baron-signal); }
-      .recipes span { color: var(--baron-muted); }
-      .demo { margin: 0; border: 1px solid var(--baron-line); border-radius: 12px; overflow: hidden; max-width: 910px; }
-      .demo img { display: block; width: 100%; height: auto; }
+      .reply { position: absolute; left: calc(10 * var(--u)); top: calc(72 * var(--u)); display: flex; gap: calc(8 * var(--u)); }
+      .avatar {
+        flex: none; width: calc(18 * var(--u)); height: calc(18 * var(--u)); border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #5a5856, #2e2d2c); box-shadow: 0 0 0 1px #3c3b39;
+      }
+      .reply ul {
+        list-style: none; margin: 0; padding: calc(7 * var(--u)) calc(10 * var(--u)); display: grid; gap: calc(4 * var(--u));
+        background: #252527; border-radius: calc(5 * var(--u));
+      }
+      .reply li { display: flex; align-items: center; gap: calc(6 * var(--u)); font-size: calc(11.5 * var(--u)); color: #b9b9bb; white-space: nowrap; }
+      .reply li svg { width: calc(9 * var(--u)); height: calc(9 * var(--u)); color: #9b9b9d; }
 
-      .paths { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
-      .paths article { display: grid; gap: 12px; align-content: start; padding: 20px; border: 1px solid var(--baron-line); border-radius: 12px; background: var(--baron-surface); min-width: 0; }
-      .paths h3 { font-family: var(--baron-display); font-size: 1.2rem; }
-      .paths pre { margin: 0; overflow-x: auto; font-size: 0.85rem; line-height: 1.7; }
-      .paths p { color: var(--baron-muted); font-size: 0.9rem; }
+      .boards { position: absolute; inset: 0; perspective: calc(2400 * var(--u)); }
+      .board, .card { position: absolute; transform-style: preserve-3d; }
+      /* One shared tilt, so the four boards read as a single fanned stack. */
+      .board {
+        width: calc(360 * var(--u)); height: calc(170 * var(--u));
+        background: linear-gradient(180deg, #252427, #1b1a1c 38%); border: 1px solid #343236; border-radius: calc(9 * var(--u));
+        transform: translate(-50%, -50%) rotateX(48deg) rotateZ(-24deg) skewX(8deg);
+        /* A lit top edge and a soft drop: one light source, from above. */
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 calc(30 * var(--u)) calc(60 * var(--u)) rgba(0, 0, 0, 0.55);
+      }
+      .board-azure { left: calc(578 * var(--u)); top: calc(378 * var(--u)); z-index: 1; }
+      .board-jira { left: calc(828 * var(--u)); top: calc(290 * var(--u)); z-index: 2; }
+      .board-linear { left: calc(900 * var(--u)); top: calc(380 * var(--u)); z-index: 3; }
+      .board-github { left: calc(830 * var(--u)); top: calc(545 * var(--u)); z-index: 4; }
+      .board-head { display: flex; align-items: center; justify-content: space-between; gap: calc(6 * var(--u)); padding: calc(8 * var(--u)) calc(12 * var(--u)); margin-bottom: calc(8 * var(--u)); border-bottom: 1px solid #2c2b2e; background: rgba(255, 255, 255, 0.025); font-size: calc(10 * var(--u)); color: #d2d0cc; font-weight: 600; }
+      .head-ghost { width: calc(46 * var(--u)); height: calc(7 * var(--u)); border-radius: calc(3 * var(--u)); background: #2e2d30; }
+      .board-label { position: absolute; left: calc(4 * var(--u)); top: calc(-16 * var(--u)); font-size: calc(9 * var(--u)); color: var(--quiet); }
+      .cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(8 * var(--u)); padding: 0 calc(12 * var(--u)); }
+      .col { display: grid; gap: calc(6 * var(--u)); align-content: start; }
+      .col-name { font-size: calc(8.5 * var(--u)); color: #9a958f; }
+      .ghost { display: flex; align-items: center; gap: calc(4 * var(--u)); height: calc(13 * var(--u)); padding: 0 calc(4 * var(--u)); border-radius: calc(3 * var(--u)); background: #262528; }
+      .ghost::after { content: ''; flex: 1; height: calc(3 * var(--u)); border-radius: 2px; background: #343337; }
+      .ghost i { width: calc(6 * var(--u)); height: calc(6 * var(--u)); border-radius: 50%; background: #3d3c40; }
+      .ghost.short { width: 70%; }
+
+      .card {
+        width: calc(128 * var(--u)); padding: calc(7 * var(--u)) calc(9 * var(--u)); display: grid; gap: calc(2 * var(--u));
+        background: linear-gradient(160deg, #2c2926, #24211f); border: calc(1.5 * var(--u)) solid rgba(176, 128, 66, 0.55); border-radius: calc(8 * var(--u));
+        /* A transparent outline keeps the border smooth under the 3D transform instead of breaking into dashes. */
+        outline: 1px solid transparent; backface-visibility: hidden;
+        box-shadow: 0 0 calc(10 * var(--u)) rgba(200, 140, 60, 0.18);
+        transition: border-color 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        transform: translate(-50%, -50%) rotateX(48deg) rotateZ(-24deg) skewX(8deg);
+        z-index: 10;
+      }
+      /* Before its trace arrives a card sits a step dimmer; lit is the resting state the comp shows. */
+      .boards .card:not(.lit) { border-color: rgba(176, 128, 66, 0.28); box-shadow: none; }
+      .col-card { display: none; }
+      .card-id { font-family: var(--mono); font-size: calc(7.5 * var(--u)); color: #a2958a; }
+      .card-title { font-size: calc(9.5 * var(--u)); line-height: 1.15; color: #ebe6df; font-weight: 500; }
+      .card-azure { left: calc(556 * var(--u)); top: calc(394 * var(--u)); }
+      .card-jira { left: calc(778 * var(--u)); top: calc(336 * var(--u)); }
+      .card-linear { left: calc(908 * var(--u)); top: calc(396 * var(--u)); }
+      .card-github { left: calc(928 * var(--u)); top: calc(518 * var(--u)); }
+      /* In transit toward GitHub, in front and readable, clear of that board's name and of the panel below. */
+      .card-moving { left: calc(536 * var(--u)); top: calc(560 * var(--u)); }
+      .traces { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 9; }
+
+      /* Below the first viewport the page is ordinary flow, on the same column the hero uses. */
+      .flow {
+        position: relative; z-index: 2;
+        width: calc(814 * var(--u)); margin: calc(-69 * var(--u)) auto 0;
+        display: grid; gap: clamp(72px, calc(110 * var(--u)), 150px);
+        padding-bottom: clamp(72px, calc(110 * var(--u)), 150px);
+      }
+      .flow h2 { font-size: clamp(26px, calc(30 * var(--u)), 44px); font-weight: 500; letter-spacing: -0.015em; line-height: 1.1; color: var(--ink); text-wrap: balance; }
+      .flow code { font-family: var(--mono); font-size: 0.92em; color: #d8c9b2; }
+      .flow a { color: #d8c9b2; text-underline-offset: 3px; }
+      .flow a:hover { color: var(--amber); }
+
+      .panel {
+        background: #161616; border: 1px solid #262626; border-radius: calc(12 * var(--u));
+        padding: calc(36 * var(--u)) calc(34 * var(--u)) calc(34 * var(--u));
+        display: grid; gap: clamp(22px, calc(28 * var(--u)), 40px);
+      }
+      .lede { display: grid; gap: 14px; max-width: 62ch; }
+      .lede p, .band-lede { font-size: clamp(16px, calc(16 * var(--u)), 21px); line-height: 1.55; color: var(--muted); max-width: 62ch; }
+
+      .table-wrap { overflow-x: auto; border: 1px solid #262626; border-radius: 10px; }
+      .roles { width: 100%; min-width: 640px; border-collapse: collapse; font-size: clamp(13px, calc(13 * var(--u)), 16px); }
+      .roles caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+      .roles th, .roles td { padding: 14px 16px; text-align: left; border-bottom: 1px solid #222; white-space: nowrap; }
+      .roles tbody tr:last-child > * { border-bottom: 0; }
+      .roles thead th { font-family: var(--mono); font-weight: 500; font-size: 0.86em; color: #8d8984; background: #191919; }
+      .roles thead th.on { color: var(--amber); }
+      .roles tbody th { font-weight: 500; color: var(--ink); }
+      .roles tbody th span { display: block; font-size: 0.78em; font-weight: 400; color: var(--quiet); margin-top: 2px; }
+      .roles td { font-family: var(--mono); font-size: 0.92em; color: #a9a5a0; }
+      .roles td.on { color: #f3d6ad; background: rgba(232, 161, 58, 0.08); box-shadow: inset 1px 0 rgba(232, 161, 58, 0.35), inset -1px 0 rgba(232, 161, 58, 0.35); }
+      .roles td.none { color: var(--quiet); }
+      .roles tbody tr:hover > * { background-color: #1b1b1b; }
+      .roles tbody tr:hover > td.on { background: rgba(232, 161, 58, 0.12); }
+      .aside { font-size: clamp(14px, calc(13.5 * var(--u)), 17px); color: var(--quiet); max-width: 72ch; }
+
+      .band { display: grid; gap: 18px; }
+      .band > .band-lede { margin-bottom: clamp(10px, calc(14 * var(--u)), 22px); }
+      .gaps { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid #262626; }
+      .gaps > div { padding: 22px 26px 4px 0; display: grid; gap: 10px; align-content: start; }
+      .gaps > div + div { padding-left: 26px; border-left: 1px solid #222; }
+      .gaps dt code { font-size: clamp(14px, calc(14 * var(--u)), 18px); color: var(--ink); }
+      .gaps dd { margin: 0; font-size: clamp(15px, calc(14.5 * var(--u)), 18px); line-height: 1.55; color: var(--muted); }
+
+      .loop { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: clamp(28px, calc(44 * var(--u)), 64px); align-items: start; }
+      .loop-text { display: grid; gap: 18px; }
+      .recipes { margin: 8px 0 0; padding: 0; list-style: none; display: grid; border-top: 1px solid #262626; }
+      .recipes li { display: grid; grid-template-columns: 9.5em 1fr; gap: 16px; padding: 14px 0; border-bottom: 1px solid #1f1f1f; font-size: clamp(15px, calc(14.5 * var(--u)), 18px); }
+      .recipes code { color: var(--ink); }
+      .recipes span { color: var(--muted); line-height: 1.5; }
+      .transcript {
+        margin: 0; background: #1e1e1f; border: 1px solid #333335; border-radius: 10px; overflow: hidden;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+      }
+      .transcript figcaption { padding: 11px 16px; border-bottom: 1px solid #2b2b2d; font-size: 14px; color: #9a9a9c; }
+      .transcript pre { margin: 0; padding: 18px; overflow-x: auto; white-space: pre-wrap; text-indent: -2ch; padding-left: calc(18px + 2ch); font-family: var(--mono); font-size: clamp(12.5px, calc(12.5 * var(--u)), 15px); line-height: 1.75; color: #b9b5ae; }
+
+      .install h2 { margin-bottom: 8px; }
+      .paths { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+      .path { background: #161616; border: 1px solid #262626; border-radius: 12px; padding: 22px 24px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+      .path h3 { margin: 0; font-size: 17px; font-weight: 500; color: var(--ink); }
+      .path-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .path .copy { font-size: 14px; }
+      .path pre { white-space: pre-wrap; overflow-wrap: normal; }
+      .path .nb { white-space: nowrap; }
+      .path pre { margin: 0; overflow-x: auto; font-family: var(--mono); font-size: 14px; line-height: 1.75; color: #d4d4d2; }
+      .path p { font-size: 15px; color: var(--muted); }
+      .docs-cta {
+        justify-self: start; margin-top: 10px; padding: 11px 18px; border-radius: 8px; text-decoration: none;
+        background: #3a3937; border: 1px solid #575551; color: #ecebe5 !important; font-size: 15px; font-weight: 500;
+      }
+      .docs-cta:hover { border-color: var(--amber); }
 
       .foot {
-        display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between;
-        padding-block: 28px 40px; border-top: 1px solid var(--baron-line);
-        font-family: var(--sl-font-mono); font-size: 0.78rem; color: var(--baron-muted);
+        width: calc(814 * var(--u)); margin: 0 auto; padding: 26px 0 44px; border-top: 1px solid #222;
+        display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: space-between; font-size: 14px; color: var(--quiet);
       }
+      .foot nav { display: flex; gap: 20px; }
+      .foot a { color: #8d8984; text-decoration: none; }
+      .foot a:hover { color: var(--ink); }
 
-      @media (max-width: 560px) {
-        main { gap: 64px; }
+      /* Past 1640px the composition stops growing and sits centred on the same ground. */
+      .stage { max-width: 1640px; margin: 0 auto; }
+      body { background: radial-gradient(ellipse 80% 50% at 60% 0%, rgba(54, 50, 46, 0.35), transparent 70%) var(--ground); }
+
+      /*
+       * Narrow screens: the copy returns to ordinary flow at reading sizes, and the scene keeps its
+       * composition as a cropped figure underneath, scaled to the column. Below 860px the vw-scaled
+       * hero would set the headline under 40px.
+       */
+      @media (max-width: 860px) {
+        .stage { aspect-ratio: auto; display: grid; gap: 28px; padding: 18px 20px 0; overflow: visible; }
+        .stage > * { position: static; }
+        .nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: auto; flex-wrap: wrap; }
+        .wordmark, .links, .cta { position: static; }
+        .wordmark { font-size: 24px; }
+        .links { gap: 16px; margin-left: auto; }
+        .links a { font-size: 14px; }
+        .cta { width: auto; height: auto; padding: 7px 12px; font-size: 14px; border-radius: 7px; }
+        .hero { display: grid; gap: 16px; justify-items: start; padding-top: 18px; }
+        .hero > * { position: static; }
+        h1 { width: auto; font-size: clamp(34px, 9.4vw, 52px); line-height: 1.02; }
+        h1 span { display: inline; }
+        .license { font-size: 14px; }
+        .subhead { white-space: normal; font-size: 17px; line-height: 1.5; max-width: 34ch; }
+        .command { width: 100%; max-width: 380px; height: 46px; padding: 0 14px; border-radius: 8px; }
+        .command code { font-size: 14px; }
+        .copy { font-size: 13px; gap: 6px; }
+        .copy svg { width: 13px; height: 13px; }
+        .docs-link { font-size: 15px; }
+        /* The scene re-stages instead of shrinking: the agent panel at reading size, then a crop of
+           the boards at the same scale, so card text stays at 11px or more. */
+        .scene { position: relative; width: 100%; }
+        .scene-inner { --u: 1.15px; position: relative; inset: auto; display: grid; gap: 14px; }
+        .agent { position: relative; left: auto; top: auto; width: min(100%, calc(269 * var(--u))); }
+        .boards { position: relative; inset: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 36px; perspective: none; }
+        .boards > .card { display: none; }
+        .board { position: relative; left: auto; top: auto; width: auto; height: auto; transform: none; padding-bottom: 10px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09); }
+        .board-label { display: none; }
+        .board-head { font-size: 13px; padding: 9px 10px; margin-bottom: 8px; }
+        .head-ghost { width: 28px; height: 6px; }
+        .cols { grid-template-columns: 1fr; padding: 0 10px; }
+        .col:not(.hit) { display: none; }
+        .col-name { font-family: var(--mono); font-size: 11px; color: #9a958f; }
+        .col .ghost { height: 14px; }
+        .col-card {
+          display: grid; gap: 3px; padding: 8px 9px; border-radius: 8px; background: linear-gradient(160deg, #2c2926, #24211f);
+          border: 1.5px solid rgba(176, 128, 66, 0.28); transition: border-color 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .col-card.lit { border-color: rgba(176, 128, 66, 0.72); }
+        .col-card .card-id { font-size: 11px; }
+        .col-card .card-title { font-size: 12.5px; line-height: 1.25; }
+        /* Under the boards: the light shows in the gutters and ends at each board, never across its text. */
+        .traces { inset: 0; z-index: 0; }
+        .board { z-index: 1; }
+        .flow { width: auto; margin: 64px 20px 0; gap: 72px; padding-bottom: 72px; }
+        .panel { padding: 24px 20px; border-radius: 12px; gap: 22px; }
+        .gaps { grid-template-columns: 1fr; }
+        .gaps > div, .gaps > div + div { padding: 18px 0 6px; border-left: 0; border-bottom: 1px solid #222; }
+        .loop { grid-template-columns: 1fr; }
         .recipes li { grid-template-columns: 1fr; gap: 4px; }
+        .paths { grid-template-columns: 1fr; }
+        /* The role table becomes one block per tracker, each state labelled with its role. */
+        .table-wrap { border: 0; overflow: visible; }
+        .roles, .roles tbody, .roles tr, .roles th, .roles td { display: block; min-width: 0; }
+        .roles thead { display: none; }
+        .roles tr { border: 1px solid #262626; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+        .roles th, .roles td { white-space: normal; border-bottom: 1px solid #222; }
+        .roles td { display: flex; justify-content: space-between; gap: 16px; }
+        .roles td::before { content: attr(data-role); color: var(--quiet); }
+        .roles td.on::before { color: var(--amber); }
+        .foot { width: auto; margin: 0 20px; }
       }
     </style>
   </body>

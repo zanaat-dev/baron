@@ -220,6 +220,12 @@ importers:
       '@fontsource-variable/bricolage-grotesque':
         specifier: 5.3.0
         version: 5.3.0
+      '@fontsource/funnel-sans':
+        specifier: 5.3.0
+        version: 5.3.0
+      '@fontsource/geist-mono':
+        specifier: 5.3.0
+        version: 5.3.0
       '@fontsource/ibm-plex-mono':
         specifier: 5.3.0
         version: 5.3.0
@@ -970,6 +976,12 @@ packages:
 
   '@fontsource-variable/bricolage-grotesque@5.3.0':
     resolution: {integrity: sha512-TLi9Q4hJjS2UvoTMRSS2nHu6c4R56lAw60NR9QYtVRCHn0XtsFpiEhNffZ8Glsoxu6wEEwLKBP8lb94J52PNBA==}
+
+  '@fontsource/funnel-sans@5.3.0':
+    resolution: {integrity: sha512-LmINq/6qfoYW1LOkOwaiZw7YVEpi3QACa36V7jxgBlO8MPGPbeSxFrPjk4lF6uP1ZbCp2VsBWmneo+1b59GbbA==}
+
+  '@fontsource/geist-mono@5.3.0':
+    resolution: {integrity: sha512-UtJ1BBBCVpMYdIcW7nEB45UAoAw5M53ZXs2t0ciPW+IokuAAIc56M8+kW5tXbRJCTpDw4XTtU7proT6NdQAHTg==}
 
   '@fontsource/ibm-plex-mono@5.3.0':
     resolution: {integrity: sha512-eTgnZjZEGk1QtD3ZstF+Vclo2HLAni8YMy34/DxllwZvyz1lR/1RF/xTiAquOBO7MvqBx8D2Ig2WCPMVfdZu7Q==}
@@ -3515,7 +3527,7 @@ snapshots:
     dependencies:
       '@types/hast': 3.0.5
       '@types/mdast': 4.0.4
-      picomatch: 4.0.4
+      picomatch: 4.0.7
       retext-smartypants: 6.2.0
       shiki: 4.5.0
       smol-toml: 1.9.1
@@ -3974,6 +3986,10 @@ snapshots:
       '@expressive-code/core': 0.44.2
 
   '@fontsource-variable/bricolage-grotesque@5.3.0': {}
+
+  '@fontsource/funnel-sans@5.3.0': {}
+
+  '@fontsource/geist-mono@5.3.0': {}
 
   '@fontsource/ibm-plex-mono@5.3.0': {}
 
