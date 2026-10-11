@@ -4,6 +4,8 @@
 > Baron is an open-source layer that turns issues, branches, PRs, CI runs, and deployments into one
 > normalized contract, so your agent never learns a vendor's API, states, or column names.
 
+**Docs and site: [baron.zanaat.dev](https://baron.zanaat.dev)**
+
 ![Baron running the task-start then task-finish recipes through its normalized ports](docs/demo/baron-demo.gif)
 
 ## The problem

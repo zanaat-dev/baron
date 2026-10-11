@@ -26,6 +26,7 @@ mcp-publisher.exe
 # they stay out of this public repo.
 dogfood/
 .baron/runs/
+!.baron/credentials.example
 
 # The docs site: build output, Astro's generated types, and copies made from docs/ at build time.
 site/dist/
