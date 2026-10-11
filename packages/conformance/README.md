@@ -1,3 +1,5 @@
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://baron.zanaat.dev/brand/mark-dark.svg"><img src="https://baron.zanaat.dev/brand/mark-light.svg" width="40" height="40" alt="Baron"></picture>
+
 # @zanaat/baron-conformance
 
 Baron adapter conformance suite and in-memory transports (test support).
@@ -18,7 +20,7 @@ dropped. Worth doing when someone outside this repo actually writes an adapter; 
 
 ## Documentation
 
-See the [Baron documentation](https://github.com/zanaat-dev/baron#readme). Source: [`packages/conformance`](https://github.com/zanaat-dev/baron/tree/main/packages/conformance).
+See the [Baron documentation](https://baron.zanaat.dev/docs/). Source: [`packages/conformance`](https://github.com/zanaat-dev/baron/tree/main/packages/conformance).
 
 ## License
 

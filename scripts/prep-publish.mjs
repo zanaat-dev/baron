@@ -22,6 +22,10 @@ const VERSION = JSON.parse(
   readFileSync(join(ROOT, 'packages/mcp-server/package.json'), 'utf8'),
 ).version;
 const REPO = 'https://github.com/zanaat-dev/baron';
+const SITE = 'https://baron.zanaat.dev';
+// npm renders README images only from absolute URLs, so the mark is served by the docs site. npm
+// ignores <source> and shows the light mark; GitHub picks the one matching its color mode.
+const MARK = `<picture><source media="(prefers-color-scheme: dark)" srcset="${SITE}/brand/mark-dark.svg"><img src="${SITE}/brand/mark-light.svg" width="40" height="40" alt="Baron"></picture>`;
 const BASE_KEYWORDS = ['baron', 'ai-agents', 'mcp', 'work-orchestration', 'devops'];
 
 const META = {
@@ -69,6 +73,15 @@ const META = {
     description: 'Baron adapter for GitHub: issues, scm, ci, deploy.',
     keywords: ['github', 'adapter'],
   },
+  '@zanaat/baron-adapter-jira': {
+    description:
+      'Baron adapter for Jira Cloud: issues, with workflow-gated transitions and transition screens.',
+    keywords: ['jira', 'adapter'],
+  },
+  '@zanaat/baron-adapter-linear': {
+    description: 'Baron adapter for Linear: issues, with team-scoped workflow states.',
+    keywords: ['linear', 'adapter'],
+  },
   '@zanaat/baron-adapter-slack': {
     description: 'Baron adapter for Slack: notify.',
     keywords: ['slack', 'adapter', 'notify'],
@@ -92,7 +105,9 @@ function readme(name, meta, relDir) {
       ? '```bash\nnpm install -g @zanaat/baron-cli   # then: baron --help\n```'
       : '```bash\nnpx -y @zanaat/baron-mcp-server\n```'
     : `\`\`\`bash\nnpm install ${name}\n\`\`\``;
-  return `# ${name}
+  return `${MARK}
+
+# ${name}
 
 ${meta.description}
 
@@ -105,7 +120,7 @@ ${install}
 
 ## Documentation
 
-See the [Baron documentation](${REPO}#readme). Source: [\`${relDir}\`](${REPO}/tree/main/${relDir}).
+See the [Baron documentation](${SITE}/docs/). Source: [\`${relDir}\`](${REPO}/tree/main/${relDir}).
 
 ## License
 
