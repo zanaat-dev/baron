@@ -1,3 +1,5 @@
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://baron.zanaat.dev/brand/mark-dark.svg"><img src="https://baron.zanaat.dev/brand/mark-light.svg" width="40" height="40" alt="Baron"></picture>
+
 # @zanaat/baron-knowledge-loop
 
 Baron knowledge loop: durable learnings and follow-ups with a pluggable store.
@@ -13,7 +15,7 @@ npm install @zanaat/baron-knowledge-loop
 
 ## Documentation
 
-See the [Baron documentation](https://github.com/zanaat-dev/baron#readme). Source: [`packages/knowledge-loop`](https://github.com/zanaat-dev/baron/tree/main/packages/knowledge-loop).
+See the [Baron documentation](https://baron.zanaat.dev/docs/). Source: [`packages/knowledge-loop`](https://github.com/zanaat-dev/baron/tree/main/packages/knowledge-loop).
 
 ## License
 

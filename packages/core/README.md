@@ -1,3 +1,5 @@
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://baron.zanaat.dev/brand/mark-dark.svg"><img src="https://baron.zanaat.dev/brand/mark-light.svg" width="40" height="40" alt="Baron"></picture>
+
 # @zanaat/baron-core
 
 Baron core: capability-port contracts, the semantic role layer, and adapter base classes.
@@ -13,7 +15,7 @@ npm install @zanaat/baron-core
 
 ## Documentation
 
-See the [Baron documentation](https://github.com/zanaat-dev/baron#readme). Source: [`packages/core`](https://github.com/zanaat-dev/baron/tree/main/packages/core).
+See the [Baron documentation](https://baron.zanaat.dev/docs/). Source: [`packages/core`](https://github.com/zanaat-dev/baron/tree/main/packages/core).
 
 ## License
 

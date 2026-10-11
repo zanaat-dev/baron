@@ -1,3 +1,5 @@
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://baron.zanaat.dev/brand/mark-dark.svg"><img src="https://baron.zanaat.dev/brand/mark-light.svg" width="40" height="40" alt="Baron"></picture>
+
 # @zanaat/baron-recipes
 
 Baron recipe engine: run declarative YAML workflows over Baron primitives, deterministically.
@@ -13,7 +15,7 @@ npm install @zanaat/baron-recipes
 
 ## Documentation
 
-See the [Baron documentation](https://github.com/zanaat-dev/baron#readme). Source: [`packages/recipes`](https://github.com/zanaat-dev/baron/tree/main/packages/recipes).
+See the [Baron documentation](https://baron.zanaat.dev/docs/). Source: [`packages/recipes`](https://github.com/zanaat-dev/baron/tree/main/packages/recipes).
 
 ## License
 

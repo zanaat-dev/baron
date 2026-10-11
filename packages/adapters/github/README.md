@@ -1,3 +1,5 @@
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://baron.zanaat.dev/brand/mark-dark.svg"><img src="https://baron.zanaat.dev/brand/mark-light.svg" width="40" height="40" alt="Baron"></picture>
+
 # @zanaat/baron-adapter-github
 
 Baron adapter for GitHub: issues, scm, ci, deploy.
@@ -13,7 +15,7 @@ npm install @zanaat/baron-adapter-github
 
 ## Documentation
 
-See the [Baron documentation](https://github.com/zanaat-dev/baron#readme). Source: [`packages/adapters/github`](https://github.com/zanaat-dev/baron/tree/main/packages/adapters/github).
+See the [Baron documentation](https://baron.zanaat.dev/docs/). Source: [`packages/adapters/github`](https://github.com/zanaat-dev/baron/tree/main/packages/adapters/github).
 
 ## License
 

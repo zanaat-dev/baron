@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="site/public/brand/mark-dark.svg">
+  <img src="site/public/brand/mark-light.svg" width="48" height="48" alt="Baron">
+</picture>
+
 # Baron
 
 > **Let your coding agent write to your work tracker — and keep the same flow when you change trackers.**

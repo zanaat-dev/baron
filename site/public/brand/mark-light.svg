@@ -1,0 +1,11 @@
+<svg role="img" aria-label="Baron" width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M0 0H1.5V1.5H0V0Z" fill="#24211E"/>
+  <path d="M0 3H3V6H0V3Z" fill="#24211E"/>
+  <path d="M0 6H6V30H0V6Z" fill="#24211E"/>
+  <path d="M6 0H24L30 6V12H24V6H6V0Z" fill="#24211E"/>
+  <path d="M6 12H24V18H6V12Z" fill="#24211E"/>
+  <path d="M24 18H30V24H24V18Z" fill="#24211E"/>
+  <path d="M6 24H24V30H6V24Z" fill="#24211E"/>
+  <path d="M27 24H30V27H27V24Z" fill="#24211E"/>
+  <path d="M28.5 28.5H30V30H28.5V28.5Z" fill="#24211E"/>
+</svg>
