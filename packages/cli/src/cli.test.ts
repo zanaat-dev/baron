@@ -28,13 +28,13 @@ describe('runCli', () => {
     const shown = harness();
     await runCli([], shown.ports);
     // Banner is chrome: it goes to stderr so stdout stays clean for data/recipe output.
-    expect(shown.err.join('\n')).toContain('by Lonca');
-    expect(shown.out.join('\n')).not.toContain('by Lonca');
+    expect(shown.err.join('\n')).toContain('by Zanaat');
+    expect(shown.out.join('\n')).not.toContain('by Zanaat');
 
     const quiet = harness();
     quiet.ports.env.BARON_NO_BANNER = '1';
     await runCli([], quiet.ports);
-    expect(quiet.err.join('\n')).not.toContain('by Lonca');
+    expect(quiet.err.join('\n')).not.toContain('by Zanaat');
   });
 
   it('exits 1 on an unknown command', async () => {

@@ -34,7 +34,7 @@ export const LINEAR_CALLBACK_PORT = 41765;
 export const LINEAR_CALLBACK_PORT_ENV = 'BARON_LINEAR_CALLBACK_PORT';
 
 /**
- * The client id of Baron's own public Linear OAuth application ("Baron", by Lonca), so a bare
+ * The client id of Baron's own public Linear OAuth application ("Baron", by Zanaat), so a bare
  * install gets the browser sign-in without registering anything. Public by design: a client id
  * grants nothing on its own, and PKCE binds each sign-in to the process that started it.
  * `BARON_LINEAR_CLIENT_ID` overrides it; setting that to empty opts out of the offer entirely.

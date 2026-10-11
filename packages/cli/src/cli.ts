@@ -59,7 +59,7 @@ const BANNER = `
   ██   ██  ██   ██  ██  ██   ██   ██  ██  ███
   ██████   ██   ██  ██   ██   █████   ██   ██
 
-  work-orchestration for AI coding agents · by Lonca
+  work-orchestration for AI coding agents · by Zanaat
 `;
 
 function printBanner(ports: CliPorts): void {
