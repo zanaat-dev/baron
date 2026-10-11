@@ -1,82 +1,104 @@
 /*
- * Direction A, "control room": ink-navy ground, one accent (rail-signal amber), mono for every label
- * that names a role, a port or a command. Starlight's dark theme is :root; its light theme is
- * [data-theme='light']. The landing page reads the same --baron-* tokens.
+ * The docs speak the landing's language (site/DESIGN.md): Funnel Sans for prose and headings at
+ * medium weight, Geist Mono for commands, roles and ids, a warm near-black ground with warm greys,
+ * and amber as the only accent. The landing is dark only; the docs keep both themes for reading,
+ * so the light theme is the same world on warm paper. Starlight's dark theme is :root, its light
+ * theme [data-theme='light'].
  */
 :root {
-  --baron-ink: #0b1220;
-  --baron-surface: #111a2b;
-  --baron-line: #22304a;
-  --baron-text: #e6ebf3;
-  --baron-muted: #8c9ab3;
-  --baron-signal: #f2a33a;
-  --baron-signal-soft: #2a2213;
-  --baron-display: "Bricolage Grotesque Variable", "Segoe UI", system-ui, sans-serif;
+  --sl-font: "Funnel Sans", "Segoe UI", system-ui, sans-serif;
+  --sl-font-mono: "Geist Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
 
-  --sl-font: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --sl-font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
-
-  --sl-color-accent-low: #3a2a10;
-  --sl-color-accent: #d98a24;
-  --sl-color-accent-high: #f7c27a;
-  --sl-color-white: #ffffff;
-  --sl-color-gray-1: #e6ebf3;
-  --sl-color-gray-2: #c3ccdb;
-  --sl-color-gray-3: #8c9ab3;
-  --sl-color-gray-4: #5b6984;
-  --sl-color-gray-5: #22304a;
-  --sl-color-gray-6: #111a2b;
-  --sl-color-black: #0b1220;
+  --sl-color-accent-low: #2a2013;
+  --sl-color-accent: #e8a13a;
+  --sl-color-accent-high: #f3d6ad;
+  --sl-color-white: #f4f3ee;
+  --sl-color-gray-1: #ecebe5;
+  --sl-color-gray-2: #c9c5bf;
+  --sl-color-gray-3: #948d86;
+  --sl-color-gray-4: #5f5a55;
+  --sl-color-gray-5: #262626;
+  --sl-color-gray-6: #161616;
+  --sl-color-black: #0e0e0f;
 }
 
 :root[data-theme="light"] {
-  --baron-ink: #f7f8fa;
-  --baron-surface: #ffffff;
-  --baron-line: #d8dee8;
-  --baron-text: #121a27;
-  --baron-muted: #566178;
-  --baron-signal: #a85a08;
-  --baron-signal-soft: #fbeedd;
-
-  --sl-color-accent-low: #fbe6c8;
-  --sl-color-accent: #a85a08;
-  --sl-color-accent-high: #5c3104;
-  --sl-color-white: #121a27;
-  --sl-color-gray-1: #1d2738;
-  --sl-color-gray-2: #34405a;
-  --sl-color-gray-3: #566178;
-  --sl-color-gray-4: #8c97ab;
-  --sl-color-gray-5: #d8dee8;
-  --sl-color-gray-6: #eef1f5;
-  --sl-color-gray-7: #f7f8fa;
-  --sl-color-black: #ffffff;
+  --sl-color-accent-low: #f6e4c6;
+  --sl-color-accent: #8f520a;
+  --sl-color-accent-high: #5f3706;
+  --sl-color-white: #161412;
+  --sl-color-gray-1: #24211e;
+  --sl-color-gray-2: #3d3934;
+  --sl-color-gray-3: #6b655d;
+  --sl-color-gray-4: #a39d93;
+  --sl-color-gray-5: #d9d5cc;
+  --sl-color-gray-6: #f3f1ec;
+  --sl-color-gray-7: #f8f6f2;
+  --sl-color-black: #fbfaf7;
 }
 
+/* Headings carry weight through size, never bold: the landing's Medium Weight rule. */
 h1,
 h2,
 h3,
-.sl-markdown-content :is(h1, h2, h3) {
-  font-family: var(--baron-display);
-  letter-spacing: -0.01em;
+.sl-markdown-content :is(h1, h2, h3, h4) {
+  font-weight: 500;
+  letter-spacing: -0.012em;
   text-wrap: balance;
 }
 
-.sl-markdown-content code:not(pre code) {
-  color: var(--sl-color-accent-high);
+.sl-markdown-content {
+  line-height: 1.65;
 }
 
-/* Sidebar group labels read as instrument labels. */
+/* Inline code is a machine-read name: mono, a quiet chip, the landing's code tint rather than amber. */
+.sl-markdown-content code:not(pre code) {
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--sl-color-gray-6);
+  color: #d8c9b2;
+  font-size: 0.88em;
+}
+:root[data-theme="light"] .sl-markdown-content code:not(pre code) {
+  color: #5b4a33;
+}
+
+/* Sidebar group labels read as instrument labels, as on the landing's role table. */
 .sidebar-content .group-label .large {
   font-family: var(--sl-font-mono);
   font-size: var(--sl-text-xs);
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--sl-color-gray-3);
 }
 
+/* The wordmark beside the mark matches the landing's: lowercase "baron" at regular weight. */
 .site-title {
-  font-family: var(--sl-font-mono);
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  font-weight: 400;
+  font-size: 1.35rem;
+  letter-spacing: -0.01em;
   text-transform: lowercase;
+  color: var(--sl-color-white);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--sl-color-accent) 30%, transparent);
+}
+
+.site-title img {
+  height: 1.7rem;
+  width: auto;
+}
+
+/* The current page reads as the landing's lit state: amber on a dark amber wash, not a filled block. */
+.sidebar-content a[aria-current="page"],
+.sidebar-content a[aria-current="page"]:hover,
+.sidebar-content a[aria-current="page"]:focus {
+  background-color: var(--sl-color-accent-low);
+  color: var(--sl-color-accent-high);
+  font-weight: 500;
+}
+:root[data-theme="light"] .sidebar-content a[aria-current="page"] {
+  color: var(--sl-color-accent-high);
 }
