@@ -77,7 +77,7 @@ const COLUMN_HOME = {
   NONE: 'none',
 } as const;
 type ColumnHome =
-  | { readonly kind: typeof COLUMN_HOME.KANBAN; readonly field: string }
+  | { readonly kind: typeof COLUMN_HOME.KANBAN; readonly field: string; readonly column: string }
   | { readonly kind: typeof COLUMN_HOME.STATE }
   | {
       readonly kind: typeof COLUMN_HOME.TASKBOARD;
@@ -234,6 +234,66 @@ export function createAzureDevOpsTransport(options: AzureDevOpsTransportOptions)
   const leafOf = (path: string): string => path.split(/[\\/]/).pop()?.toLowerCase() ?? '';
 
   /**
+   * A backlog item's column lives in its board's `WEF_<board>_Kanban.Column` field, and holding the
+   * field only says the item is on that board, not that the board has the column asked for (seen
+   * live on BeeMaster: a PBI asked for 'In Progress' read as reachable, and only Azure's refusal of
+   * the patch caught it, past the point where the gap policy could have decided). So the team's
+   * boards are read, the one that owns one of the item's fields is found, and its columns are
+   * checked as the Taskboard's are.
+   */
+  const kanbanHome = async (
+    workApi: WorkApi,
+    kanbanFields: readonly string[],
+    want: {
+      readonly column: string;
+      readonly wanted: string;
+      readonly type: string;
+      readonly state: string | undefined;
+    },
+  ): Promise<ColumnHome> => {
+    const refs = (await workApi.getBoards({ project, team })) ?? [];
+    const boards = await Promise.all(
+      refs
+        .map((ref) => ref.id)
+        .filter((id): id is string => id !== undefined)
+        .map((id) => workApi.getBoard({ project, team }, id)),
+    );
+    const board = boards.find((b) => {
+      const field = b?.fields?.columnField?.referenceName;
+      return field !== undefined && kanbanFields.includes(field);
+    });
+    const field = board?.fields?.columnField?.referenceName;
+    if (board === undefined || field === undefined) {
+      // The item is on another team's board only, which this team's configuration cannot inspect.
+      // Azure still validates the column on write, so this stays loud; it just cannot be negotiated.
+      const [first = ''] = kanbanFields;
+      return { kind: COLUMN_HOME.KANBAN, field: first, column: want.column };
+    }
+    const columns = board.columns ?? [];
+    const match = columns.find((c) => c.name?.trim().toLowerCase() === want.wanted);
+    if (match?.name === undefined) {
+      const names = columns.map((c) => c.name).filter(Boolean);
+      return {
+        kind: COLUMN_HOME.NONE,
+        reason:
+          `team '${team}''s '${board.name ?? 'backlog'}' board has no column '${want.column}' ` +
+          `(it has: ${names.length > 0 ? names.join(', ') : 'none'}).`,
+      };
+    }
+    // A board column holds each type in one state; writing it with another state is refused by Azure.
+    const mapped = match.stateMappings?.[want.type];
+    if (want.state !== undefined && mapped !== undefined && mapped !== want.state) {
+      return {
+        kind: COLUMN_HOME.NONE,
+        reason:
+          `the '${board.name ?? 'backlog'}' board column '${match.name}' holds ${want.type} items in ` +
+          `state '${mapped}', but the role map pairs it with '${want.state}'.`,
+      };
+    }
+    return { kind: COLUMN_HOME.KANBAN, field, column: match.name };
+  };
+
+  /**
    * Where this item's board column can be written, or why it cannot. Asked by the core before a
    * transition (to apply the gap policy with nothing written yet) and again by applyTarget (to
    * write it), so the two can never disagree about the route.
@@ -241,15 +301,17 @@ export function createAzureDevOpsTransport(options: AzureDevOpsTransportOptions)
   const columnHome = async (item: WorkItem, target: NativeTarget): Promise<ColumnHome> => {
     const column = target[TARGET.BOARD_COLUMN] ?? '';
     const fields = item.fields ?? {};
-    const kanbanField = Object.keys(fields).find((key) => key.endsWith(KANBAN_COLUMN_SUFFIX));
-    if (kanbanField !== undefined) return { kind: COLUMN_HOME.KANBAN, field: kanbanField };
-
     const type = String(fields[FIELD.TYPE] ?? '');
-    const iterationPath = String(fields[FIELD.ITERATION_PATH] ?? '');
-    const workApi = await work();
-    const board = await workApi.getColumns({ project, team });
     const wanted = column.trim().toLowerCase();
     const state = target[TARGET.STATE];
+    const workApi = await work();
+    const kanbanFields = Object.keys(fields).filter((key) => key.endsWith(KANBAN_COLUMN_SUFFIX));
+    if (kanbanFields.length > 0) {
+      return kanbanHome(workApi, kanbanFields, { column, wanted, type, state });
+    }
+
+    const iterationPath = String(fields[FIELD.ITERATION_PATH] ?? '');
+    const board = await workApi.getColumns({ project, team });
     // Measured on BeeMaster (2026-10-06): a team that never customized its Taskboard gets
     // `isCustomized: false` and no columns at all — the board shows one column per state.
     if (board?.isCustomized !== true && (board?.columns ?? []).length === 0) {
@@ -365,7 +427,7 @@ export function createAzureDevOpsTransport(options: AzureDevOpsTransportOptions)
           );
         }
         if (home.kind === COLUMN_HOME.KANBAN) {
-          ops.push({ op: Operation.Add, path: fieldPath(home.field), value: column });
+          ops.push({ op: Operation.Add, path: fieldPath(home.field), value: home.column });
         } else if (home.kind === COLUMN_HOME.TASKBOARD) {
           taskboard = home;
         }
