@@ -10,6 +10,7 @@ import {
   type MergeOptions,
   type MergeResult,
   type MergeStrategy,
+  type Mergeability,
   type NativeBranch,
   type NativePullRequest,
   type NativePullRequestInput,
@@ -25,6 +26,38 @@ import {
 import { createGithubOctokit } from './octokit.js';
 import { GITHUB_PROVIDER } from './provider.js';
 import type { GithubTransportOptions } from './transport.js';
+
+/** GitHub's `mergeable_state` values that decide the mergeability on their own. */
+const MERGEABLE_STATE = {
+  CLEAN: 'clean',
+  UNSTABLE: 'unstable',
+  HAS_HOOKS: 'has_hooks',
+  DIRTY: 'dirty',
+  BLOCKED: 'blocked',
+  BEHIND: 'behind',
+} as const;
+
+/**
+ * GitHub's view of a PR's merge -> the normalized mergeability. `unstable` (failing checks that do
+ * not block) and `has_hooks` still merge; the checks rollup reports the failures. `behind` is branch
+ * protection requiring an up-to-date branch, so it blocks like `blocked`. `draft` and `unknown` say
+ * nothing about the merge itself, so GitHub's boolean answers, where null means still computing.
+ */
+function toMergeability(mergeable: boolean | null, mergeableState: string): Mergeability {
+  switch (mergeableState) {
+    case MERGEABLE_STATE.CLEAN:
+    case MERGEABLE_STATE.UNSTABLE:
+    case MERGEABLE_STATE.HAS_HOOKS:
+      return 'mergeable';
+    case MERGEABLE_STATE.DIRTY:
+      return 'conflicts';
+    case MERGEABLE_STATE.BLOCKED:
+    case MERGEABLE_STATE.BEHIND:
+      return 'blocked_by_policy';
+  }
+  if (mergeable === null) return 'computing';
+  return mergeable ? 'mergeable' : 'conflicts';
+}
 
 /** GitHub supports draft PRs and PR discussion (PR-level issue comments). */
 export const githubScmManifest: ScmManifest = {
@@ -500,6 +533,7 @@ export function createGithubScmTransport(options: GithubTransportOptions): ScmTr
         state,
         reviewDecision,
         ...(pr.mergeable != null ? { mergeable: pr.mergeable } : {}),
+        mergeability: toMergeability(pr.mergeable, pr.mergeable_state),
         checks,
         url: pr.html_url,
       };

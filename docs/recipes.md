@@ -222,7 +222,7 @@ to text.
 | `scm.branch.create` | `name`, `fromBranch?` | the branch |
 | `scm.pr.create` | `title`, `sourceBranch`, `targetBranch?`, `body?`, `draft?` | the PR |
 | `scm.pr.thread` | `pullRequestId`, `body` | the thread |
-| `scm.pr.status` | `pullRequestId` | normalized PR status (state, reviewDecision, mergeable, checks) |
+| `scm.pr.status` | `pullRequestId` | normalized PR status (state, reviewDecision, mergeable, mergeability: `mergeable` · `conflicts` · `computing` · `blocked_by_policy` · `failed` · `unknown`, checks) |
 | `scm.pr.find` | `sourceBranch`, `state?` (`open` default / `merged` / `closed` / `all`) | the most recent matching PR (with `state`), or `null` |
 | `scm.pr.ready` | `pullRequestId` | the PR, taken out of draft |
 | `scm.pr.merge` | `pullRequestId`, `strategy?`, `deleteSourceBranch?` | `{ merged, sha }` — throws if the provider refuses |
