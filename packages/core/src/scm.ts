@@ -248,6 +248,27 @@ export type ReviewDecision = (typeof REVIEW_DECISIONS)[number];
 export const CHECK_ROLLUPS = ['succeeded', 'failed', 'pending', 'none', 'unknown'] as const;
 export type CheckRollup = (typeof CHECK_ROLLUPS)[number];
 
+/**
+ * The provider's own verdict on whether a pull request can merge right now.
+ *
+ * A boolean could not tell "conflicts" from "still computing" from "a rule refuses it", and a
+ * caller acts on each differently: ask for a rebase, wait, or name the rule and stop. `computing` is
+ * the provider not having finished its trial merge yet; `blocked_by_policy` is a branch rule that
+ * refuses the merge as things stand (an Azure merge policy, GitHub branch protection, which also
+ * counts its required reviews and checks); `failed` is the provider's trial merge erroring for some
+ * other reason. `unknown` means the provider did not say, or the PR is no longer open, and never
+ * "fine": a merged PR is not mergeable, it is done.
+ */
+export const MERGEABILITIES = [
+  'mergeable',
+  'conflicts',
+  'computing',
+  'blocked_by_policy',
+  'failed',
+  'unknown',
+] as const;
+export type Mergeability = (typeof MERGEABILITIES)[number];
+
 export interface CheckSummary {
   /** Checks actually counted. Always 0 for `none`; may be partial when the view was incomplete. */
   readonly total: number;
@@ -285,8 +306,12 @@ export interface PullRequestStatus {
   readonly id: string;
   readonly state: PrState;
   readonly reviewDecision: ReviewDecision;
-  /** Whether the PR can merge cleanly; undefined when the provider hasn't computed it. */
+  /**
+   * Whether the PR can merge cleanly; undefined when the provider hasn't computed it. Kept for the
+   * callers that read it; `mergeability` says which of the ways it can be false applies.
+   */
   readonly mergeable?: boolean | undefined;
+  readonly mergeability: Mergeability;
   readonly checks: CheckSummary;
   readonly url?: string | undefined;
 }
@@ -451,8 +476,11 @@ export class BaseScmAdapter implements ScmPort {
 
   async prStatus(pullRequestId: string): Promise<PullRequestStatus> {
     // Aggregation is provider-specific (votes/policy vs reviews/checks), so the transport computes
-    // the normalized status; the base simply delegates.
-    return this.transport.getPullRequestStatus(pullRequestId);
+    // the normalized status. One rule holds everywhere, so it lives here: only an open PR has a
+    // mergeability. Azure keeps reporting its last trial merge as succeeded after completion, which
+    // a careless caller would read as "merged".
+    const status = await this.transport.getPullRequestStatus(pullRequestId);
+    return status.state === 'open' ? status : { ...status, mergeability: 'unknown' };
   }
 
   private toPullRequest(native: NativePullRequest): PullRequest {

@@ -55,6 +55,7 @@ const transport: ScmTransport = {
       state: 'open' as const,
       reviewDecision: 'approved' as const,
       mergeable: true,
+      mergeability: 'mergeable' as const,
       checks: { total: 2, succeeded: 2, failed: 0, pending: 0, rollup: 'succeeded' as const },
     };
   },
@@ -114,6 +115,24 @@ describe('BaseScmAdapter prStatus', () => {
     expect(status.state).toBe('open');
     expect(status.reviewDecision).toBe('approved');
     expect(status.checks.rollup).toBe('succeeded');
+    expect(status.mergeability).toBe('mergeable');
+  });
+
+  it('reports no mergeability for a PR that is no longer open, whatever the provider last computed', async () => {
+    // Azure keeps its last trial merge as succeeded after the PR completes; read as-is, a merged PR
+    // would claim it can still merge.
+    const merged: ScmTransport = {
+      ...transport,
+      async getPullRequestStatus(pullRequestId: string) {
+        return {
+          ...(await transport.getPullRequestStatus(pullRequestId)),
+          state: 'merged' as const,
+        };
+      },
+    };
+    const status = await new BaseScmAdapter(withDraft, merged).prStatus('5');
+    expect(status.state).toBe('merged');
+    expect(status.mergeability).toBe('unknown');
   });
 });
 

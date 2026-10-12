@@ -130,6 +130,7 @@ export function createMemoryScmTransport(opts: MemoryScmTransportOptions = {}): 
         state: 'open' as const,
         reviewDecision: opts.reviewDecision ?? ('review_required' as const),
         mergeable: true,
+        mergeability: 'mergeable' as const,
         checks: opts.checks ?? ALL_GREEN,
         url: `mem://pr/${pullRequestId}`,
       };

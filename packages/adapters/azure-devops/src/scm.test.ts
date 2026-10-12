@@ -214,6 +214,39 @@ describe('azure scm branch-policy evaluations', () => {
   });
 });
 
+/**
+ * Azure's trial-merge status has six values and the old boolean kept two: queued, a policy refusal
+ * and a failure all read as "not computed", and a caller had no way to tell waiting from stopping.
+ */
+describe('azure scm mergeability', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getPolicyEvaluations.mockResolvedValue({ statusCode: 200, result: { value: [] } });
+  });
+
+  // PullRequestAsyncStatus, by value: the SDK enum is real here, only the client is stubbed.
+  it.each([
+    [3, 'mergeable', true],
+    [2, 'conflicts', false],
+    [1, 'computing', undefined],
+    [4, 'blocked_by_policy', undefined],
+    [5, 'failed', undefined],
+    [0, 'unknown', undefined],
+    [undefined, 'unknown', undefined],
+  ])('reads mergeStatus %s as %s', async (mergeStatus, mergeability, mergeable) => {
+    mocks.getPullRequestById.mockResolvedValue({
+      pullRequestId: 9,
+      status: 1,
+      mergeStatus,
+      reviewers: [],
+      repository: { project: { id: 'project-guid' } },
+    });
+    const status = await transport().getPullRequestStatus('9');
+    expect(status.mergeability).toBe(mergeability);
+    expect(status.mergeable).toBe(mergeable);
+  });
+});
+
 describe('azure scm mergePullRequest', () => {
   beforeEach(() => vi.clearAllMocks());
 

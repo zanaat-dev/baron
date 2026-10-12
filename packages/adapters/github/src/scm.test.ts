@@ -166,6 +166,37 @@ const OPEN_PR = {
   },
 };
 
+describe('github scm mergeability', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.listReviews.mockResolvedValue({ data: [] });
+    mocks.checksListForRef.mockResolvedValue({ data: { check_runs: [] } });
+    mocks.listWorkflowRuns.mockResolvedValue({ data: { workflow_runs: [] } });
+    mocks.combinedStatus.mockResolvedValue({ data: { statuses: [] } });
+  });
+
+  it.each([
+    ['clean', true, 'mergeable'],
+    // Failing checks that do not block still merge; the rollup carries the failure.
+    ['unstable', true, 'mergeable'],
+    ['has_hooks', true, 'mergeable'],
+    ['dirty', false, 'conflicts'],
+    ['blocked', true, 'blocked_by_policy'],
+    // Branch protection requiring an up-to-date branch.
+    ['behind', true, 'blocked_by_policy'],
+    // Draft and unknown say nothing about the merge; GitHub's boolean does, null meaning computing.
+    ['draft', false, 'conflicts'],
+    ['draft', true, 'mergeable'],
+    ['unknown', null, 'computing'],
+  ])('reads mergeable_state %s (mergeable %s) as %s', async (state, mergeable, mergeability) => {
+    mocks.prGet.mockResolvedValue({
+      data: { ...OPEN_PR.data, mergeable, mergeable_state: state },
+    });
+    const status = await transport().getPullRequestStatus('7');
+    expect(status.mergeability).toBe(mergeability);
+  });
+});
+
 describe('github scm prStatus when the credential cannot read checks', () => {
   beforeEach(() => {
     vi.clearAllMocks();

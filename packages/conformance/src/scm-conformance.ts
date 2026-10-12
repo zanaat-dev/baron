@@ -1,6 +1,7 @@
 import {
   CHECK_ROLLUPS,
   type GapPolicy,
+  MERGEABILITIES,
   type RecordingLogger,
   type ScmPort,
 } from '@zanaat/baron-core';
@@ -120,7 +121,7 @@ export function runScmConformance(target: ScmConformanceTarget): void {
       expect(pr.targetBranch).toBeTruthy();
     });
 
-    it('reports a normalized pull-request status (state + review decision + checks rollup)', async () => {
+    it('reports a normalized pull-request status (state + review decision + mergeability + checks rollup)', async () => {
       const { adapter } = target.build();
       const pr = await adapter.createPullRequest({ title: 'PR', sourceBranch: 'feature/x' });
       const status = await adapter.prStatus(pr.id);
@@ -129,6 +130,12 @@ export function runScmConformance(target: ScmConformanceTarget): void {
         status.reviewDecision,
       );
       expect(CHECK_ROLLUPS).toContain(status.checks.rollup);
+      expect(MERGEABILITIES).toContain(status.mergeability);
+      // The boolean is kept for compatibility and must never contradict the enum.
+      if (status.mergeable === true) expect(status.mergeability).toBe('mergeable');
+      if (status.mergeable === false) expect(status.mergeability).toBe('conflicts');
+      // Only an open PR can be mergeable; a merged or closed one reports 'unknown'.
+      if (status.state !== 'open') expect(status.mergeability).toBe('unknown');
       // The rollup must agree with the counts it summarizes, and both ways of reporting "no green
       // to show" must be distinguishable: 'none' means asked-and-there-are-none, 'unknown' means
       // could-not-look. Neither may carry counted checks, and a caller must never see one as green.

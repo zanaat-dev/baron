@@ -7,6 +7,7 @@ import {
   type MergeOptions,
   type MergeResult,
   type MergeStrategy,
+  type Mergeability,
   type NativeBranch,
   type NativePullRequest,
   type NativePullRequestInput,
@@ -109,6 +110,28 @@ function toPrState(status: AzurePrStatus | undefined): PrState {
   if (status === AzurePrStatus.Abandoned) return 'closed';
   if (status === AzurePrStatus.Active) return 'open';
   return 'unknown';
+}
+
+/**
+ * Azure's trial-merge status -> the normalized mergeability. `RejectedByPolicy` is a policy refusing
+ * the trial merge itself; reviewer and build policies still arrive through the policy evaluations,
+ * as checks.
+ */
+function toMergeability(status: PullRequestAsyncStatus | undefined): Mergeability {
+  switch (status) {
+    case PullRequestAsyncStatus.Succeeded:
+      return 'mergeable';
+    case PullRequestAsyncStatus.Conflicts:
+      return 'conflicts';
+    case PullRequestAsyncStatus.Queued:
+      return 'computing';
+    case PullRequestAsyncStatus.RejectedByPolicy:
+      return 'blocked_by_policy';
+    case PullRequestAsyncStatus.Failure:
+      return 'failed';
+    default:
+      return 'unknown';
+  }
 }
 
 /** Normalized state filter -> the Azure PR status to search by. `all` searches every status. */
@@ -537,12 +560,9 @@ export function createAzureDevOpsScmTransport(
           : hasApprove || hasWaiting
             ? 'pending'
             : 'review_required';
+      const mergeability = toMergeability(pr.mergeStatus);
       const mergeable =
-        pr.mergeStatus === PullRequestAsyncStatus.Succeeded
-          ? true
-          : pr.mergeStatus === PullRequestAsyncStatus.Conflicts
-            ? false
-            : undefined;
+        mergeability === 'mergeable' ? true : mergeability === 'conflicts' ? false : undefined;
       const id = String(pr.pullRequestId ?? pullRequestId);
       const checks = await policyChecks(pr.repository?.project?.id, id);
       return {
@@ -550,6 +570,7 @@ export function createAzureDevOpsScmTransport(
         state,
         reviewDecision,
         ...(mergeable !== undefined ? { mergeable } : {}),
+        mergeability,
         checks,
         url: prWebUrl(id),
       };
