@@ -314,6 +314,7 @@ describe('TOOL_DEFINITIONS', () => {
     expect(TOOL_DEFINITIONS.map((t) => t.name)).toEqual([
       MCP_TOOL_NAMES.create,
       MCP_TOOL_NAMES.get,
+      MCP_TOOL_NAMES.comments,
       MCP_TOOL_NAMES.trace,
       MCP_TOOL_NAMES.update,
       MCP_TOOL_NAMES.transition,

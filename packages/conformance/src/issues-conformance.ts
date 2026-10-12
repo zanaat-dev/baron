@@ -497,6 +497,20 @@ export function runIssuesConformance(target: IssuesConformanceTarget): void {
       expect(comment.body).toBe('hello there');
     });
 
+    it('comments reads them back, oldest first, and an item without any reads empty', async () => {
+      const { adapter } = target.build({});
+      const issue = await adapter.create({ title: 'x', typeRole: 'task' });
+      expect(await adapter.comments(issue.id)).toEqual([]);
+      const first = await adapter.comment(issue.id, 'evidence: build 41 green');
+      const second = await adapter.comment(issue.id, 'evidence: deployed to dev');
+      const read = await adapter.comments(issue.id);
+      // What a caller dedupes against: the same ids and bodies it wrote, in the order it wrote them.
+      expect(read.map((c) => [c.id, c.body])).toEqual([
+        [first.id, first.body],
+        [second.id, second.body],
+      ]);
+    });
+
     it('query filters by role and by type role', async () => {
       const { adapter } = target.build({ ...emulateStates, ...emulateTypeFiltering });
       const issue = await adapter.create({ title: 'q', typeRole: 'task' });

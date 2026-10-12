@@ -52,6 +52,8 @@ export function runCiConformance(target: CiConformanceTarget): void {
       for (const run of runs) {
         expect(isRunStatus(run.status)).toBe(true);
         expect(run.nativeStatus.length).toBeGreaterThan(0);
+        // A run carries the commit it built when the provider reports one, untouched.
+        if (run.sha !== undefined) expect(run.sha.length).toBeGreaterThan(0);
       }
     });
 
@@ -75,6 +77,8 @@ export function runCiConformance(target: CiConformanceTarget): void {
       const id = runs[0]?.id as string;
       const detail = await adapter.run(id);
       expect(isRunStatus(detail.status)).toBe(true);
+      // The commit a run built is what ties it to a merge; the detail and the listing must agree.
+      expect(detail.sha).toBe(runs[0]?.sha);
       for (const stage of detail.stages) {
         expect(isRunStatus(stage.status)).toBe(true);
       }

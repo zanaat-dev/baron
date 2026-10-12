@@ -74,6 +74,12 @@ export interface Run {
   readonly pullRequestId?: string | undefined;
   /** Human-facing run number where the provider has one. */
   readonly number?: string | undefined;
+  /**
+   * The commit the run built. For a pull-request run it is the commit on the provider's PR ref: the
+   * trial merge on Azure, the PR head on GitHub. Lets a caller confirm a run (or the deploy after it)
+   * contains a given merge commit.
+   */
+  readonly sha?: string | undefined;
   readonly url?: string | undefined;
   readonly createdAt?: string | undefined;
   readonly finishedAt?: string | undefined;
@@ -152,6 +158,8 @@ export interface NativeRun {
   /** The pull request this run validates, when it ran on the provider's PR ref rather than a branch. */
   readonly pullRequestId?: string | undefined;
   readonly number?: string | undefined;
+  /** The commit the run built (see {@link Run.sha}). */
+  readonly sha?: string | undefined;
   readonly url?: string | undefined;
   readonly createdAt?: string | undefined;
   readonly finishedAt?: string | undefined;
@@ -244,6 +252,7 @@ export class BaseCiAdapter implements CiPort {
       branch: n.branch,
       pullRequestId: n.pullRequestId,
       number: n.number,
+      sha: n.sha,
       url: n.url,
       createdAt: n.createdAt,
       finishedAt: n.finishedAt,

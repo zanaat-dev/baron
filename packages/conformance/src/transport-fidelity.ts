@@ -21,6 +21,7 @@ export interface TransportFidelityTarget {
  */
 const REQUIRED_METHODS: Partial<Record<CapabilityName, readonly (keyof IssuesTransport)[]>> = {
   nativeLabels: ['addLabel', 'removeLabel'],
+  comments: ['addComment', 'listComments'],
   sprints: ['listIterations', 'setIteration'],
   issueLinks: ['linkIssues'],
   assignment: ['assignIssue'],

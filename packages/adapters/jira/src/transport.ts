@@ -24,6 +24,8 @@ const ERROR_CODE = 'JIRA_API';
  * uses, including the newer `search/jql`.
  */
 const API_PREFIX = '/rest/api/2';
+/** Comments fetched per request; Jira caps the page server-side and the loop follows `total`. */
+const COMMENTS_PAGE = 100;
 
 /** The sentinel the core sends for "whoever holds this credential"; Jira has `currentUser()` for it. */
 const ME = '@me';
@@ -400,6 +402,31 @@ export function createJiraTransport(opts: JiraTransportOptions): IssuesTransport
         author: comment.author?.emailAddress ?? comment.author?.displayName ?? undefined,
         createdAt: comment.created,
       };
+    },
+
+    async listComments(id: string): Promise<readonly NativeComment[]> {
+      type Page = {
+        comments: { id: string; body: string; author?: JiraUser | null; created?: string }[];
+        total: number;
+      };
+      const comments: NativeComment[] = [];
+      // Paged by offset; ordered by creation so the thread reads oldest first, as on every provider.
+      for (let startAt = 0; ; ) {
+        const page = await call<Page>(
+          'GET',
+          `/issue/${encodeURIComponent(id)}/comment?orderBy=created&startAt=${startAt}&maxResults=${COMMENTS_PAGE}`,
+        );
+        for (const comment of page.comments) {
+          comments.push({
+            id: comment.id,
+            body: comment.body,
+            author: comment.author?.emailAddress ?? comment.author?.displayName ?? undefined,
+            createdAt: comment.created,
+          });
+        }
+        startAt += page.comments.length;
+        if (page.comments.length === 0 || startAt >= page.total) return comments;
+      }
     },
 
     async linkIssues(fromId: string, toId: string, nativeLinkType: string): Promise<void> {

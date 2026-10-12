@@ -238,6 +238,23 @@ export function createGithubTransport(options: GithubTransportOptions): IssuesTr
       };
     },
 
+    async listComments(id: string): Promise<readonly NativeComment[]> {
+      // GitHub lists an issue's comments oldest first; paginate so a long thread is read whole.
+      const comments = await octokit.paginate(octokit.rest.issues.listComments, {
+        owner,
+        repo,
+        issue_number: Number(id),
+        per_page: 100,
+      });
+      return comments.map((c) => ({
+        id: String(c.id),
+        body: c.body ?? '',
+        author: c.user?.login,
+        createdAt: c.created_at,
+        url: c.html_url,
+      }));
+    },
+
     async assignIssue(id: string, assignee: string): Promise<NativeIssue> {
       // '@me' must resolve to the token owner's login — GitHub rejects the literal '@me' as an
       // assignee (it's not a real login), which broke task-start's `issue.assign @me` on GitHub.

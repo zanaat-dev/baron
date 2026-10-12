@@ -211,6 +211,7 @@ to text.
 | `issue.reconcile` | `id` | the issue, with any role label Baron itself wrote cleared once the provider's own state contradicts it |
 | `issue.update` | `id`, `title?`, `body?` | the issue |
 | `issue.comment` | `id`, `body` | the comment |
+| `issue.comments` | `id` | the item's comments, oldest first, each `{ id, body, author?, createdAt?, url? }` with the body as the provider stores it (Azure keeps HTML) — read before posting so the same evidence is not added twice |
 | `issue.link` | `fromId`, `toId`, `type` | — |
 | `issue.assign` | `id`, `assignee` (provider-native handle) | the issue |
 | `issue.block` | `id`, `reason` | the issue — sets the orthogonal blocked flag; the role is untouched. A reason is required |

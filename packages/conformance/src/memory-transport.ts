@@ -26,6 +26,7 @@ interface Rec {
   iteration: string | undefined;
   url: string;
   links: Array<{ toId: string; type: string }>;
+  comments: NativeComment[];
   /** Screen answers the last transition carried — what a Jira issue would show on its fields. */
   fields: Record<string, unknown>;
   /** The board column last written, for a provider whose column is separate from the state. */
@@ -175,6 +176,7 @@ export function createMemoryTransport(opts: MemoryTransportOptions): IssuesTrans
         iteration: undefined,
         url: `mem://${id}`,
         links: [],
+        comments: [],
         fields: {},
       };
       store.set(id, rec);
@@ -288,9 +290,15 @@ export function createMemoryTransport(opts: MemoryTransportOptions): IssuesTrans
         }),
 
     async addComment(id: string, body: string): Promise<NativeComment> {
-      must(id);
+      const rec = must(id);
       commentSeq += 1;
-      return { id: `mem-comment-${commentSeq}`, body, url: `mem://comment/${commentSeq}` };
+      const comment = { id: `mem-comment-${commentSeq}`, body, url: `mem://comment/${commentSeq}` };
+      rec.comments.push(comment);
+      return comment;
+    },
+
+    async listComments(id: string): Promise<readonly NativeComment[]> {
+      return [...must(id).comments];
     },
 
     async linkIssues(fromId: string, toId: string, nativeLinkType: string): Promise<void> {

@@ -68,6 +68,7 @@ interface GhRun {
   status?: string | null;
   conclusion?: string | null;
   head_branch?: string | null;
+  head_sha?: string;
   run_number?: number;
   html_url?: string;
   created_at?: string;
@@ -85,6 +86,7 @@ function toNativeRun(r: GhRun): NativeRun {
     result: r.conclusion ?? undefined,
     branch: r.head_branch ?? undefined,
     number: r.run_number !== undefined ? String(r.run_number) : undefined,
+    sha: r.head_sha,
     url: r.html_url,
     createdAt: r.created_at,
     finishedAt: r.updated_at,

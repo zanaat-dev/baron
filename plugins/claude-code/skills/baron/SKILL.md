@@ -30,7 +30,7 @@ Issues port: `baron_issue_write op=create`, `baron_issue_read op=get`, `baron_is
 patch, omitted fields keep their value; the body lands in the field the type uses, so a bug's body
 is its repro steps. Use it to fix a title or fill in a description after creation; it does NOT move
 the role or the assignee), `baron_issue_move op=transition`,
-`baron_issue_write op=comment`, `baron_issue_write op=link`, `baron_issue_write op=assign` (provider-native handle: Azure
+`baron_issue_write op=comment`, `baron_issue_read op=comments` (oldest first; read before posting so the same evidence is not added twice), `baron_issue_write op=link`, `baron_issue_write op=assign` (provider-native handle: Azure
 email, GitHub login), `baron_issue_read op=iterations` + `baron_issue_write op=set_iteration` (sprints — each
 iteration has a `current` flag; move by path or `@current`; providers without sprints negotiate the
 gap), `baron_issue_read op=query` (filters: `role`, `typeRole`, `assignee` — a handle or `@me`; `iteration`

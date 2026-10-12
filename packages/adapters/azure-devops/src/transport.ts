@@ -12,6 +12,7 @@ import {
 } from '@zanaat/baron-core';
 import * as azdev from 'azure-devops-node-api';
 import {
+  CommentSortOrder,
   type WorkItem,
   WorkItemExpand,
 } from 'azure-devops-node-api/interfaces/WorkItemTrackingInterfaces.js';
@@ -85,6 +86,8 @@ type ColumnHome =
       readonly column: string;
     }
   | { readonly kind: typeof COLUMN_HOME.NONE; readonly reason: string };
+/** The comments API serves at most 200 a page; a longer thread is followed by continuation token. */
+const COMMENTS_PAGE = 200;
 /** getWorkItems is server-capped at 200 ids; query results are fetched in batches of this size. */
 const GET_WORK_ITEMS_BATCH = 200;
 
@@ -504,6 +507,34 @@ export function createAzureDevOpsTransport(options: AzureDevOpsTransportOptions)
         createdAt: comment.createdDate?.toISOString(),
         url: comment.url,
       };
+    },
+
+    async listComments(id: string): Promise<readonly NativeComment[]> {
+      const witApi = await api();
+      const comments: NativeComment[] = [];
+      let continuationToken: string | undefined;
+      do {
+        const page = await witApi.getComments(
+          project,
+          Number(id),
+          COMMENTS_PAGE,
+          continuationToken,
+          false,
+          undefined,
+          CommentSortOrder.Asc,
+        );
+        for (const comment of page.comments ?? []) {
+          comments.push({
+            id: String(comment.id ?? ''),
+            body: comment.text ?? '',
+            author: comment.createdBy?.displayName,
+            createdAt: comment.createdDate?.toISOString(),
+            url: comment.url,
+          });
+        }
+        continuationToken = page.continuationToken ?? undefined;
+      } while (continuationToken !== undefined && continuationToken.length > 0);
+      return comments;
     },
 
     async updateIssue(id: string, update: NativeUpdateInput): Promise<NativeIssue> {

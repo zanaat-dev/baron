@@ -15,6 +15,7 @@ export const RECIPE_OPS = {
   issueBlock: 'issue.block',
   issueUnblock: 'issue.unblock',
   issueComment: 'issue.comment',
+  issueComments: 'issue.comments',
   issueLink: 'issue.link',
   issueAssign: 'issue.assign',
   issueWhoami: 'issue.whoami',
@@ -54,6 +55,7 @@ export function isRecipeOp(value: string): value is RecipeOp {
  */
 const READ_RECIPE_OPS: ReadonlySet<string> = new Set<RecipeOp>([
   RECIPE_OPS.issueGet,
+  RECIPE_OPS.issueComments,
   RECIPE_OPS.issueClassify,
   RECIPE_OPS.issueWhoami,
   RECIPE_OPS.issueIterations,

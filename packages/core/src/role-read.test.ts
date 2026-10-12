@@ -73,6 +73,9 @@ function adapterFor(discriminator: string, labels: readonly string[]) {
     async addComment(_id: string, body: string) {
       return { id: 'c1', body };
     },
+    async listComments() {
+      return [];
+    },
     async assignIssue() {
       return native;
     },

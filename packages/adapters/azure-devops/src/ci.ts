@@ -109,6 +109,7 @@ function toNativeRun(b: Build): NativeRun {
     branch,
     pullRequestId,
     number: b.buildNumber,
+    sha: b.sourceVersion,
     url: b._links?.web?.href as string | undefined,
     createdAt: iso(b.queueTime),
     finishedAt: iso(b.finishTime),

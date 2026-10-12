@@ -119,6 +119,16 @@ export interface NativeComment {
   readonly url?: string | undefined;
 }
 
+function toIssueComment(native: NativeComment): IssueComment {
+  return {
+    id: native.id,
+    body: native.body,
+    author: native.author,
+    createdAt: native.createdAt,
+    url: native.url,
+  };
+}
+
 /**
  * A query the transport executes, expressed in already-translated native terms: `target` is the
  * role's native discriminator (the transport reads its own key, e.g. state or label), `nativeType`
@@ -205,6 +215,11 @@ export interface IssuesTransport {
    */
   ensureLabels?(labels: readonly LabelSpec[]): Promise<void>;
   addComment(id: string, body: string): Promise<NativeComment>;
+  /**
+   * Every comment on the item, oldest first, each body as the provider stores it (Azure keeps
+   * HTML). Reading is what lets a caller avoid posting the same evidence twice.
+   */
+  listComments(id: string): Promise<readonly NativeComment[]>;
   /** Create a native typed link. Only called when the manifest declares `issueLinks`. */
   linkIssues(fromId: string, toId: string, nativeLinkType: string): Promise<void>;
   queryIssues(query: NativeQuery): Promise<readonly NativeIssue[]>;
@@ -265,6 +280,8 @@ export interface IssuesPort {
    */
   reconcile(id: string): Promise<Issue>;
   comment(id: string, body: string): Promise<IssueComment>;
+  /** The item's comments, oldest first. */
+  comments(id: string): Promise<readonly IssueComment[]>;
   link(fromId: string, toId: string, type: IssueLinkType): Promise<void>;
   query(filter: IssueQuery): Promise<readonly Issue[]>;
   /** Assign the issue to a provider-native user handle (Azure: email; GitHub: login). */
@@ -565,14 +582,17 @@ export class BaseIssuesAdapter implements IssuesPort {
     if (!this.manifest.issues.comments) {
       resolveGap('comments', this.manifest, this.cfg.gapPolicy, this.logger);
     }
-    const native = await this.transport.addComment(id, body);
-    return {
-      id: native.id,
-      body: native.body,
-      author: native.author,
-      createdAt: native.createdAt,
-      url: native.url,
-    };
+    return toIssueComment(await this.transport.addComment(id, body));
+  }
+
+  async comments(id: string): Promise<readonly IssueComment[]> {
+    if (!this.manifest.issues.comments) {
+      // A provider without comments has none to read, so once the policy has spoken (an `error`
+      // throws, anything else is logged) the honest answer is an empty list.
+      resolveGap('comments', this.manifest, this.cfg.gapPolicy, this.logger);
+      return [];
+    }
+    return (await this.transport.listComments(id)).map(toIssueComment);
   }
 
   async link(fromId: string, toId: string, type: IssueLinkType): Promise<void> {
