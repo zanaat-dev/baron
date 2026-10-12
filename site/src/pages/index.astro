@@ -53,7 +53,7 @@ const GAPS = [
   },
   {
     mode: 'emulate:labels',
-    text: 'Synthesize it. GitHub has no native parent and child, so the hierarchy rides a parent:<id> label.',
+    text: 'Synthesize it. GitHub has no native parent and child, so the hierarchy rides a `parent:<id>` label.',
   },
   {
     mode: 'degrade',
@@ -64,7 +64,7 @@ const RECIPES = [
   { name: 'task-new', does: 'Files the item with its type and parent.' },
   {
     name: 'task-start',
-    does: 'Cuts the canonical branch, moves the item to in_progress, assigns you.',
+    does: 'Cuts the canonical branch, moves the item to `in_progress`, assigns you.',
   },
   {
     name: 'task-finish',
@@ -75,17 +75,26 @@ const RECIPES = [
     does: 'Refuses red or pending checks, takes the PR out of draft, merges it.',
   },
 ];
-const TRANSCRIPT = `Baron  ▸ runs the task-start recipe as a single call:
-  ✓ Loaded ${'STORE-142'} "${'Add rate limiting to the login endpoint'}"  (type role: task)
-  ✓ Checked it: not done, has a canonical branch, not assigned to someone else
-  ✓ Branched feature/STORE-142 from the repo's default branch
-  ✓ Moved STORE-142 → in_progress, assigned to you
-  ✓ Commented on the item: "Started work — on branch feature/STORE-142."`;
+// Prose strings mark machine words with backticks; `marked` sets those in mono.
+const marked = (text: string) => text.split('`').map((part, i) => ({ part, code: i % 2 === 1 }));
+// One entry per printed line; steps are nested under the heading so a wrapped step hangs under its text.
+const TRANSCRIPT = [
+  { text: 'Baron  ▸ runs the task-start recipe as a single call:', step: false },
+  { text: `✓ Loaded ${ITEM.id} "${ITEM.title}"  (type role: task)`, step: true },
+  {
+    text: '✓ Checked it: not done, has a canonical branch, not assigned to someone else',
+    step: true,
+  },
+  { text: `✓ Branched feature/${ITEM.id} from the repo's default branch`, step: true },
+  { text: `✓ Moved ${ITEM.id} → in_progress, assigned to you`, step: true },
+  { text: `✓ Commented on the item: "Started work — on branch feature/${ITEM.id}."`, step: true },
+];
+// The same four steps task-start runs, as the agent reports them.
 const replies = [
   `Branched feature/${ITEM.id}`,
   `Moved ${ITEM.id} to in_progress`,
   'Assigned to you',
-  'Linked the pull request',
+  'Commented on the item',
 ];
 ---
 
@@ -103,6 +112,7 @@ const replies = [
     <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt" />
   </head>
   <body>
+    <a class="skip" href="#main">Skip to content</a>
     <div class="stage">
       <header class="nav">
         <a class="wordmark" href="/" aria-label="Baron home">baron</a>
@@ -191,7 +201,7 @@ const replies = [
 
     </div>
 
-    <main class="flow">
+    <main class="flow" id="main">
       <section class="panel contract" aria-labelledby="contract-title">
         <div class="lede">
           <h2 id="contract-title">One contract. Every tracker.</h2>
@@ -234,7 +244,7 @@ const replies = [
           {GAPS.map((g) => (
             <div>
               <dt><code>{g.mode}</code></dt>
-              <dd>{g.text}</dd>
+              <dd>{marked(g.text).map((m) => (m.code ? <code>{m.part}</code> : m.part))}</dd>
             </div>
           ))}
         </dl>
@@ -249,13 +259,13 @@ const replies = [
           </p>
           <ol class="recipes">
             {RECIPES.map((r) => (
-              <li><code>{r.name}</code><span>{r.does}</span></li>
+              <li><code>{r.name}</code><span>{marked(r.does).map((m) => (m.code ? <code>{m.part}</code> : m.part))}</span></li>
             ))}
           </ol>
         </div>
         <figure class="transcript" aria-label="What task-start prints">
           <figcaption>You: Start work on {ITEM.id}.</figcaption>
-          <pre><code>{TRANSCRIPT}</code></pre>
+          <pre><code>{TRANSCRIPT.map((l) => <span class:list={['line', { step: l.step }]}>{l.text}</span>)}</code></pre>
         </figure>
       </section>
 
@@ -282,7 +292,7 @@ const replies = [
               </button>
             </div>
             <pre><code id="mcp-cmd">npx -y @zanaat/baron-mcp-server@latest</code></pre>
-            <p>Listed in the official MCP Registry as <code>io.github.zanaat-dev/baron</code>.</p>
+            <p>Listed in the official MCP Registry as <code class="nb">io.github.zanaat-dev/baron</code>.</p>
           </div>
         </div>
         <a class="docs-cta" href={DOCS}>Read the getting started guide</a>
@@ -429,6 +439,7 @@ const replies = [
       }
       * { box-sizing: border-box; }
       html, body { margin: 0; background: var(--ground); }
+      html { scrollbar-color: #3a3937 var(--ground); }
       body { color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
       ::selection { background: var(--amber); color: #111; }
       a { color: inherit; }
@@ -543,7 +554,8 @@ const replies = [
       .board-azure { left: calc(578 * var(--u)); top: calc(378 * var(--u)); z-index: 1; }
       .board-jira { left: calc(828 * var(--u)); top: calc(290 * var(--u)); z-index: 2; }
       .board-linear { left: calc(900 * var(--u)); top: calc(380 * var(--u)); z-index: 3; }
-      .board-github { left: calc(830 * var(--u)); top: calc(545 * var(--u)); z-index: 4; }
+      /* Ends above the first panel: where the panel overlapped it, its lower edge read as cut. */
+      .board-github { left: calc(830 * var(--u)); top: calc(507 * var(--u)); z-index: 4; }
       .board-head { display: flex; align-items: center; justify-content: space-between; gap: calc(6 * var(--u)); padding: calc(8 * var(--u)) calc(12 * var(--u)); margin-bottom: calc(8 * var(--u)); border-bottom: 1px solid #2c2b2e; background: rgba(255, 255, 255, 0.025); font-size: calc(10 * var(--u)); color: #d2d0cc; font-weight: 600; }
       .head-ghost { width: calc(46 * var(--u)); height: calc(7 * var(--u)); border-radius: calc(3 * var(--u)); background: #2e2d30; }
       .board-label { position: absolute; left: calc(4 * var(--u)); top: calc(-16 * var(--u)); font-size: calc(9 * var(--u)); color: var(--quiet); }
@@ -573,7 +585,7 @@ const replies = [
       .card-azure { left: calc(556 * var(--u)); top: calc(394 * var(--u)); }
       .card-jira { left: calc(778 * var(--u)); top: calc(336 * var(--u)); }
       .card-linear { left: calc(908 * var(--u)); top: calc(396 * var(--u)); }
-      .card-github { left: calc(928 * var(--u)); top: calc(518 * var(--u)); }
+      .card-github { left: calc(928 * var(--u)); top: calc(480 * var(--u)); }
       /* In transit toward GitHub, in front and readable, clear of that board's name and of the panel below. */
       .card-moving { left: calc(536 * var(--u)); top: calc(560 * var(--u)); }
       .traces { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 9; }
@@ -626,14 +638,18 @@ const replies = [
       .loop-text { display: grid; gap: 18px; }
       .recipes { margin: 8px 0 0; padding: 0; list-style: none; display: grid; border-top: 1px solid #262626; }
       .recipes li { display: grid; grid-template-columns: 9.5em 1fr; gap: 16px; padding: 14px 0; border-bottom: 1px solid #1f1f1f; font-size: clamp(15px, calc(14.5 * var(--u)), 18px); }
-      .recipes code { color: var(--ink); }
+      .recipes li > code { color: var(--ink); }
       .recipes span { color: var(--muted); line-height: 1.5; }
+      /* The transcript is shorter than the recipe list, so it stays in view while the list scrolls past. */
       .transcript {
-        margin: 0; background: #1e1e1f; border: 1px solid #333335; border-radius: 10px; overflow: hidden;
+        position: sticky; top: 32px; margin: 0; background: #1e1e1f; border: 1px solid #333335; border-radius: 10px; overflow: hidden;
         box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
       }
       .transcript figcaption { padding: 11px 16px; border-bottom: 1px solid #2b2b2d; font-size: 14px; color: #9a9a9c; }
-      .transcript pre { margin: 0; padding: 18px; overflow-x: auto; white-space: pre-wrap; text-indent: -2ch; padding-left: calc(18px + 2ch); font-family: var(--mono); font-size: clamp(12.5px, calc(12.5 * var(--u)), 15px); line-height: 1.75; color: #b9b5ae; }
+      /* Each line hangs: a wrapped heading continues 2ch in, a wrapped step continues under its text, past the check. */
+      .transcript .line { display: block; padding-left: 2ch; text-indent: -2ch; }
+      .transcript .step { margin-left: 2ch; }
+      .transcript pre { margin: 0; padding: 18px; overflow-x: auto; white-space: pre-wrap; font-family: var(--mono); font-size: clamp(12.5px, calc(12.5 * var(--u)), 15px); line-height: 1.75; color: #b9b5ae; }
 
       .install h2 { margin-bottom: 8px; }
       .paths { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
@@ -651,6 +667,13 @@ const replies = [
         background: #3a3937; border: 1px solid #575551; color: #ecebe5 !important; font-size: 15px; font-weight: 500;
       }
       .docs-cta:hover { border-color: var(--amber); }
+
+      .skip {
+        position: absolute; left: 16px; top: 12px; z-index: 20; padding: 9px 14px; border-radius: 8px;
+        background: #3a3937; border: 1px solid #575551; color: var(--ink); font-size: 14px; font-weight: 500; text-decoration: none;
+        transform: translateY(calc(-100% - 20px));
+      }
+      .skip:focus-visible { transform: none; }
 
       .foot {
         width: calc(814 * var(--u)); margin: 0 auto; padding: 26px 0 44px; border-top: 1px solid #222;
@@ -719,6 +742,7 @@ const replies = [
         .gaps { grid-template-columns: 1fr; }
         .gaps > div, .gaps > div + div { padding: 18px 0 6px; border-left: 0; border-bottom: 1px solid #222; }
         .loop { grid-template-columns: 1fr; }
+        .transcript { position: static; }
         .recipes li { grid-template-columns: 1fr; gap: 4px; }
         .paths { grid-template-columns: 1fr; }
         /* The role table becomes one block per tracker, each state labelled with its role. */

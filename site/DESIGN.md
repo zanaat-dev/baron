@@ -180,6 +180,7 @@ A warm-neutral dark palette with one amber voice; greys lean faintly warm, never
 - **Sunk Surface** (`surface-sunk`): content panels and install cards. **Header Surface** (`surface-header`): table header row. **Command Surface** (`surface-command`): the init command box. **Raised Surface** (`surface-raised`): window-like objects (agent panel, transcript).
 - **Hairlines** (`hairline`, `hairline-soft`, `hairline-raised`): 1px borders and dividers; raised objects take the lighter `hairline-raised`.
 - **Graphite** (`graphite-fill`, `graphite-stroke`): the filled-and-stroked button.
+- **Graphite scrollbar**: the page scrollbar is themed `scrollbar-color: graphite-fill on ground`, so the one browser surface always on screen belongs to the palette.
 
 ### Named Rules
 **The One Light Rule.** Amber marks light, the active role and focus; nothing else. If an element is amber, it must be either where the agent's action landed or where the keyboard is.
@@ -213,7 +214,7 @@ A warm-neutral dark palette with one amber voice; greys lean faintly warm, never
 
 The first viewport is a fixed composition of 1024 x 687 comp units, every hero element placed in comp units (`--u` = min(100vw, 1280px, 100svh x 1024/687) / 1024, floored at 860px), so the scene scales as a whole, stops growing at 1280px and never grows taller than the window. The stage spans the window and clips only at its edges; the composition sits centred in it, so on wide screens the boards end inside the page and on narrower ones they bleed off the screen edge, never against an invisible box. Copy sits left in the upper third from a 104-unit margin; the scene (agent panel front left, four tilted boards bleeding right) fills the lower two thirds, and the first panel overlaps the stage bottom by 69 units so the next heading peeks.
 
-Below the hero the page is ordinary flow on an 814-unit column (the hero's own column), with section gaps of clamp(72px, 110 units, 150px). Bands are single column except the recipes band, which pairs text and transcript at 1 : 1.15. Gap policies sit in three hairline-divided columns.
+Below the hero the page is ordinary flow on an 814-unit column (the hero's own column), with section gaps of clamp(72px, 110 units, 150px). Bands are single column except the recipes band, which pairs text and transcript at 1 : 1.15; the transcript is sticky (32px from the top) so it stays in view beside the longer recipe list, and returns to flow on phones. Transcript lines hang: a wrapped step continues under its text, past the check. Gap policies sit in three hairline-divided columns.
 
 At 860px and below the stage drops its fixed composition: copy returns to flow at reading sizes with 20px gutters, the agent panel renders at a fixed 1.15px unit, and the four boards lie flat in a two-by-two grid, each showing only its in_progress column with the card, so card text stays at 11px or more. Multi-column bands collapse to one; the role table becomes one bordered block per tracker with each state labelled by its role.
 
@@ -264,7 +265,7 @@ The idea of the product as a table: roles across the top in Geist Mono labels, o
 The same item card (mono id over a two-line 500-weight title) sits in each tracker's own column. Cards start one step dim; a canvas trace leaves the agent panel and, on arrival, the card lights (stroke to full bronze, soft glow) over 0.6s on `cubic-bezier(0.16, 1, 0.3, 1)`. Traces draw with an exponential ease-out over 900ms, staggered 140ms per card, positioned from where the cards actually render so they stay attached at every width; on phones they leave the panel's lower edge and run behind the boards. Under `prefers-reduced-motion` every card is lit and traces draw complete with no animation.
 
 ### Agent panel
-A small chat window: title row, a right-aligned user bubble (#38383a), and a reply list of checked lines (inline SVG checks) next to a graphite avatar. It is the source of the light.
+A small chat window: title row, a right-aligned user bubble (#38383a), and a reply list of checked lines (inline SVG checks) next to a graphite avatar. Its four lines are the four steps `task-start` really runs, matching the transcript below. It is the source of the light.
 
 ## Do's and Don'ts
 
