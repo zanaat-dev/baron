@@ -4,9 +4,11 @@ import { defineConfig, passthroughImageService } from 'astro/config';
 import starlightLlmsTxt from 'starlight-llms-txt';
 
 const REPO = 'https://github.com/zanaat-dev/baron';
+const SITE = 'https://baron.zanaat.dev';
+const SHARE_IMAGE = `${SITE}/og.png`;
 
 export default defineConfig({
-  site: 'https://baron.zanaat.dev',
+  site: SITE,
   // The docs carry no raster images that need resizing, and sharp is a native dependency this
   // monorepo would otherwise have to install and approve for nothing.
   image: { service: passthroughImageService() },
@@ -20,6 +22,13 @@ export default defineConfig({
         'One contract for issues, branches, pull requests, CI and deployments, so a coding agent can write to any work tracker.',
       logo: { light: './src/assets/mark-light.svg', dark: './src/assets/mark-dark.svg' },
       favicon: '/favicon.svg',
+      // Starlight writes the title, description and card type per page; the image is the landing's share card.
+      head: [
+        { tag: 'meta', attrs: { property: 'og:image', content: SHARE_IMAGE } },
+        { tag: 'meta', attrs: { property: 'og:image:width', content: '1200' } },
+        { tag: 'meta', attrs: { property: 'og:image:height', content: '630' } },
+        { tag: 'meta', attrs: { name: 'twitter:image', content: SHARE_IMAGE } },
+      ],
       social: [{ icon: 'github', label: 'GitHub', href: REPO }],
       // docs/ at the repository root is the source; the site copy is generated (scripts/sync-docs.mjs).
       editLink: { baseUrl: `${REPO}/edit/main/` },
