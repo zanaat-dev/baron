@@ -27,7 +27,7 @@ colors:
 typography:
   display:
     fontFamily: "'Funnel Sans', 'Segoe UI', system-ui, sans-serif"
-    fontSize: "calc(47 * min(100vw, 1640px) / 1024)"
+    fontSize: "calc(47 * min(100vw, 1280px) / 1024)"
     fontWeight: 500
     lineHeight: 0.99
     letterSpacing: "-0.012em"
@@ -39,7 +39,7 @@ typography:
     letterSpacing: "-0.012em"
   headline:
     fontFamily: "'Funnel Sans', 'Segoe UI', system-ui, sans-serif"
-    fontSize: "clamp(26px, calc(30 * min(100vw, 1640px) / 1024), 44px)"
+    fontSize: "clamp(26px, calc(30 * min(100vw, 1280px) / 1024), 44px)"
     fontWeight: 500
     lineHeight: 1.1
     letterSpacing: "-0.015em"
@@ -49,12 +49,12 @@ typography:
     fontWeight: 500
   body-lede:
     fontFamily: "'Funnel Sans', 'Segoe UI', system-ui, sans-serif"
-    fontSize: "clamp(16px, calc(16 * min(100vw, 1640px) / 1024), 21px)"
+    fontSize: "clamp(16px, calc(16 * min(100vw, 1280px) / 1024), 21px)"
     fontWeight: 400
     lineHeight: 1.55
   body:
     fontFamily: "'Funnel Sans', 'Segoe UI', system-ui, sans-serif"
-    fontSize: "clamp(15px, calc(14.5 * min(100vw, 1640px) / 1024), 18px)"
+    fontSize: "clamp(15px, calc(14.5 * min(100vw, 1280px) / 1024), 18px)"
     fontWeight: 400
     lineHeight: 1.55
   mono:
@@ -67,7 +67,7 @@ typography:
     fontWeight: 500
   mono-block:
     fontFamily: "'Geist Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace"
-    fontSize: "clamp(12.5px, calc(12.5 * min(100vw, 1640px) / 1024), 15px)"
+    fontSize: "clamp(12.5px, calc(12.5 * min(100vw, 1280px) / 1024), 15px)"
     fontWeight: 400
     lineHeight: 1.75
 rounded:
@@ -82,7 +82,7 @@ spacing:
   md: "18px"
   lg: "22px"
   xl: "26px"
-  section: "clamp(72px, calc(110 * min(100vw, 1640px) / 1024), 150px)"
+  section: "clamp(72px, calc(110 * min(100vw, 1280px) / 1024), 150px)"
 components:
   button-primary:
     backgroundColor: "{colors.graphite-fill}"
@@ -195,7 +195,7 @@ A warm-neutral dark palette with one amber voice; greys lean faintly warm, never
 **Character:** A refined, slightly open grotesk set at medium weight with tight tracking, paired with a clean geometric mono that carries everything a machine would read. No third-party font requests at runtime.
 
 ### Hierarchy
-- **Display** (500, 47 comp units, about 47px at 1024 and up to 75px at the 1640px cap; 0.99; -0.012em): the hero headline only, two set lines. On narrow screens `display-narrow` (clamp 34–52px, 1.02) and the lines run inline.
+- **Display** (500, 47 comp units, about 47px at 1024 and up to 59px at the 1280px cap; 0.99; -0.012em): the hero headline only, two set lines. On narrow screens `display-narrow` (clamp 34–52px, 1.02) and the lines run inline.
 - **Headline** (500, clamp 26–44px, 1.1, -0.015em, balanced wrap): one per band below the hero.
 - **Title** (500, 17px): card titles such as the install paths.
 - **Body lede** (400, clamp 16–21px, 1.55, max 62ch): the paragraph under a headline, in Warm Stone.
@@ -211,7 +211,7 @@ A warm-neutral dark palette with one amber voice; greys lean faintly warm, never
 
 ## Layout
 
-The first viewport is a fixed composition: a stage with aspect ratio 1024/687, every hero element placed in comp units (`--u` = min(100vw, 1640px) / 1024), so the scene scales as a whole and stops growing at 1640px, centred on the same ground. Copy sits left in the upper third from a 104-unit margin; the scene (agent panel front left, four tilted boards bleeding right) fills the lower two thirds, and the first panel overlaps the stage bottom by 69 units so the next heading peeks.
+The first viewport is a fixed composition of 1024 x 687 comp units, every hero element placed in comp units (`--u` = min(100vw, 1280px, 100svh x 1024/687) / 1024, floored at 860px), so the scene scales as a whole, stops growing at 1280px and never grows taller than the window. The stage spans the window and clips only at its edges; the composition sits centred in it, so on wide screens the boards end inside the page and on narrower ones they bleed off the screen edge, never against an invisible box. Copy sits left in the upper third from a 104-unit margin; the scene (agent panel front left, four tilted boards bleeding right) fills the lower two thirds, and the first panel overlaps the stage bottom by 69 units so the next heading peeks.
 
 Below the hero the page is ordinary flow on an 814-unit column (the hero's own column), with section gaps of clamp(72px, 110 units, 150px). Bands are single column except the recipes band, which pairs text and transcript at 1 : 1.15. Gap policies sit in three hairline-divided columns.
 
@@ -242,10 +242,10 @@ Quiet, solid and warm; they do not shout.
 - **Shape:** gently rounded (`rounded.md`; the nav Get started uses 7 comp units).
 - **Primary:** Graphite fill with a Graphite stroke and Bone text, 500 weight (Get started, Read the getting started guide).
 - **Hover / Focus:** the stroke turns Lamp Amber; focus is a 2px amber outline offset 3px with a 4px radius.
-- **Text button (copy):** no chrome; an inline 11–13px outline SVG plus the word "copy" in grey, turning Bone on hover; the label reports "copied" or "select it" for 1.6s.
+- **Icon button (copy):** no chrome and no word; an outline copy SVG (12 comp units in the hero, 15px on phones and install cards) in grey on a square hit area (23 units, 30px on cards, 38px on phones) that takes a faint white wash and Bone on hover. On success the icon swaps to a check for 1.6s; if the clipboard is refused the command is selected instead. A shared visually hidden status line announces either outcome.
 
 ### Command box
-The install command as an object: Command Surface, a hairline, `rounded.sm`, Geist Mono command at left and the copy button at right. Set once, in the hero.
+The install command as an object: Command Surface, a hairline, `rounded.sm`, Geist Mono command at left and the copy icon button at right, sized to its command. It shares one row with the Read the docs link, 22 units apart (stacked 16px apart on phones). Set once, in the hero.
 
 ### Cards / Containers
 - **Corner Style:** `rounded.xl` for content panels and install cards, `rounded.lg` for the table and windows.

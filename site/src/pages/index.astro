@@ -117,14 +117,16 @@ const replies = [
       <section class="hero" aria-labelledby="hero-title">
         <h1 id="hero-title"><span>Let your coding agent</span> <span>write to your work tracker.</span></h1>
         <p class="subhead">Your agent speaks roles. Baron speaks Azure DevOps, GitHub, Jira and Linear.</p>
-        <div class="command">
-          <code id="init-cmd">npx @zanaat/baron-cli init</code>
-          <button type="button" class="copy" data-copy="init-cmd" aria-label="Copy the init command">
-            <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><rect x="5" y="5" width="9" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"></rect><path d="M11 3.5V3a1.5 1.5 0 0 0-1.5-1.5h-6A1.5 1.5 0 0 0 2 3v6A1.5 1.5 0 0 0 3.5 10.5H4" fill="none" stroke="currentColor" stroke-width="1.4"></path></svg>
-            <span>copy</span>
-          </button>
+        <div class="actions">
+          <div class="command">
+            <code id="init-cmd">npx @zanaat/baron-cli init</code>
+            <button type="button" class="copy" data-copy="init-cmd" aria-label="Copy the init command" title="Copy">
+              <svg class="i-copy" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><rect x="5" y="5" width="9" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"></rect><path d="M11 3.5V3a1.5 1.5 0 0 0-1.5-1.5h-6A1.5 1.5 0 0 0 2 3v6A1.5 1.5 0 0 0 3.5 10.5H4" fill="none" stroke="currentColor" stroke-width="1.4"></path></svg>
+              <svg class="i-done" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </button>
+          </div>
+          <a class="docs-link" href={DOCS}>Read the docs</a>
         </div>
-        <a class="docs-link" href={DOCS}>Read the docs</a>
         <p class="license">Open source · Apache-2.0</p>
       </section>
 
@@ -263,7 +265,10 @@ const replies = [
           <div class="path">
             <div class="path-head">
               <h3>Claude Code plugin</h3>
-              <button type="button" class="copy" data-copy="plugin-cmd" aria-label="Copy the plugin commands"><span>copy</span></button>
+              <button type="button" class="copy" data-copy="plugin-cmd" aria-label="Copy the plugin commands" title="Copy">
+                <svg class="i-copy" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><rect x="5" y="5" width="9" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"></rect><path d="M11 3.5V3a1.5 1.5 0 0 0-1.5-1.5h-6A1.5 1.5 0 0 0 2 3v6A1.5 1.5 0 0 0 3.5 10.5H4" fill="none" stroke="currentColor" stroke-width="1.4"></path></svg>
+                <svg class="i-done" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </button>
             </div>
             <pre><code id="plugin-cmd">/plugin marketplace add <span class="nb">zanaat-dev/baron</span>
 /plugin install baron@baron</code></pre>
@@ -271,7 +276,10 @@ const replies = [
           <div class="path">
             <div class="path-head">
               <h3>Any MCP client</h3>
-              <button type="button" class="copy" data-copy="mcp-cmd" aria-label="Copy the MCP server command"><span>copy</span></button>
+              <button type="button" class="copy" data-copy="mcp-cmd" aria-label="Copy the MCP server command" title="Copy">
+                <svg class="i-copy" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><rect x="5" y="5" width="9" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"></rect><path d="M11 3.5V3a1.5 1.5 0 0 0-1.5-1.5h-6A1.5 1.5 0 0 0 2 3v6A1.5 1.5 0 0 0 3.5 10.5H4" fill="none" stroke="currentColor" stroke-width="1.4"></path></svg>
+                <svg class="i-done" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </button>
             </div>
             <pre><code id="mcp-cmd">npx -y @zanaat/baron-mcp-server@latest</code></pre>
             <p>Listed in the official MCP Registry as <code>io.github.zanaat-dev/baron</code>.</p>
@@ -289,6 +297,8 @@ const replies = [
         <a href="/llms.txt">llms.txt</a>
       </nav>
     </footer>
+
+    <p class="sr-only" role="status" id="copy-status"></p>
 
     <script>
       const canvas = document.querySelector<HTMLCanvasElement>('.traces');
@@ -371,17 +381,26 @@ const replies = [
       window.addEventListener('resize', () => draw());
       (document.fonts?.ready ?? Promise.resolve()).then(play);
 
+      // The buttons are icon-only, so the outcome is announced through one shared live region; when
+      // the clipboard is refused the command is selected instead, ready for Ctrl+C.
+      const status = document.getElementById('copy-status');
       for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
-        const label = button.querySelector('span');
+        let reset = 0;
         button.addEventListener('click', async () => {
-          const text = document.getElementById(button.dataset.copy ?? '')?.textContent ?? '';
+          const source = document.getElementById(button.dataset.copy ?? '');
           try {
-            await navigator.clipboard.writeText(text);
-            if (label) label.textContent = 'copied';
+            await navigator.clipboard.writeText(source?.textContent ?? '');
+            button.dataset.state = 'done';
+            if (status) status.textContent = 'Copied';
           } catch {
-            if (label) label.textContent = 'select it';
+            if (source) window.getSelection()?.selectAllChildren(source);
+            if (status) status.textContent = 'Copy is blocked here; the command is selected';
           }
-          window.setTimeout(() => label && (label.textContent = 'copy'), 1600);
+          window.clearTimeout(reset);
+          reset = window.setTimeout(() => {
+            delete button.dataset.state;
+            if (status) status.textContent = '';
+          }, 1600);
         });
       }
     </script>
@@ -396,8 +415,17 @@ const replies = [
         --sans: 'Funnel Sans', 'Segoe UI', system-ui, sans-serif;
         --mono: 'Geist Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
         /* One comp pixel at the comp's 1024px width; the first viewport scales as a whole. */
-        --u: calc(min(100vw, 1640px) / 1024);
+        --u: calc(min(100vw, 1280px) / 1024);
         color-scheme: dark;
+      }
+      /*
+       * The composition is 1024 x 687 comp units. It stops growing at 1280px, the reading width of the
+       * category (a 2560px screen otherwise set a 75px headline), and it never grows taller than the
+       * window, so the scene stays one first viewport on short laptop screens too. The 860px floor is
+       * where the narrow layout takes over.
+       */
+      @media (min-width: 861px) {
+        :root { --u: calc(clamp(860px, min(100vw, 1280px, 100svh * 1024 / 687), 1280px) / 1024); }
       }
       * { box-sizing: border-box; }
       html, body { margin: 0; background: var(--ground); }
@@ -409,22 +437,28 @@ const replies = [
     </style>
 
     <style>
+      /*
+       * The stage spans the window and only clips at its edges, so the boards bleed off the screen
+       * rather than ending against an invisible box; the composition is centred inside it. The light is
+       * sized in comp units so it stays fixed to the scene instead of stretching with the window.
+       */
       .stage {
         position: relative;
         width: 100%;
-        aspect-ratio: 1024 / 687;
+        height: calc(687 * var(--u));
         overflow: hidden;
         background:
-          radial-gradient(ellipse 70% 60% at 66% 6%, rgba(66, 65, 63, 0.8), transparent 72%),
-          radial-gradient(ellipse 50% 40% at 30% 0%, rgba(54, 50, 46, 0.45), transparent 75%),
+          radial-gradient(calc(717 * var(--u)) calc(412 * var(--u)) at calc(50% + 164 * var(--u)) calc(41 * var(--u)), rgba(66, 65, 63, 0.8), transparent 72%),
+          radial-gradient(calc(512 * var(--u)) calc(275 * var(--u)) at calc(50% - 205 * var(--u)) 0, rgba(54, 50, 46, 0.45), transparent 75%),
           var(--ground);
       }
       .stage > * { position: absolute; }
+      .nav, .hero, .scene { left: calc(50% - 512 * var(--u)); width: calc(1024 * var(--u)); }
       /* A composited layer renders text with grayscale antialiasing, as the comp does, instead of colour-fringed subpixel text. */
       .stage { will-change: transform; }
       .nav, .hero, .agent { transform: translateZ(0); }
 
-      .nav { inset: 0 0 auto 0; height: calc(58 * var(--u)); }
+      .nav { top: 0; height: calc(58 * var(--u)); }
       .wordmark {
         position: absolute; left: calc(104 * var(--u)); top: calc(13 * var(--u));
         font-size: calc(27 * var(--u)); font-weight: 400; color: #dddbda; text-decoration: none; letter-spacing: -0.01em;
@@ -439,7 +473,7 @@ const replies = [
       }
       .cta:hover { border-color: var(--amber); }
 
-      .hero { inset: 0; pointer-events: none; }
+      .hero { top: 0; bottom: 0; pointer-events: none; }
       .hero > * { position: absolute; pointer-events: auto; }
       /* The license rides beside the docs link: the floor bans a label above the headline. */
       .license { left: calc(105 * var(--u)); top: calc(314 * var(--u)); font-size: calc(11.5 * var(--u)); color: var(--quiet); white-space: nowrap; }
@@ -449,22 +483,29 @@ const replies = [
         font-size: calc(47 * var(--u)); line-height: 0.99; font-weight: 500; letter-spacing: -0.012em; color: var(--ink);
       }
       .subhead { left: calc(105 * var(--u)); top: calc(228 * var(--u)); font-size: calc(15.8 * var(--u)); color: var(--muted); white-space: nowrap; }
+      /* The command and its docs link share one row, so the link keeps a real gap however wide the command sets. */
+      .actions { left: calc(104 * var(--u)); top: calc(268 * var(--u)); display: flex; align-items: center; gap: calc(22 * var(--u)); }
       .command {
-        left: calc(104 * var(--u)); top: calc(268 * var(--u)); width: calc(262 * var(--u)); height: calc(33 * var(--u));
-        display: flex; align-items: center; justify-content: space-between; padding: 0 calc(10 * var(--u));
+        height: calc(33 * var(--u)); display: flex; align-items: center; gap: calc(8 * var(--u));
+        padding: 0 calc(5 * var(--u)) 0 calc(10 * var(--u));
         background: #171718; border: 1px solid #2f2f30; border-radius: calc(6 * var(--u));
       }
       .command code { font-family: var(--mono); font-size: calc(12.2 * var(--u)); color: #d4d4d2; white-space: nowrap; }
       .copy {
-        display: inline-flex; align-items: center; gap: calc(4 * var(--u)); background: none; border: 0; padding: 0; cursor: pointer;
-        font: 400 calc(11 * var(--u)) var(--sans); color: #8d8d8b;
+        flex: none; display: grid; place-items: center; width: calc(23 * var(--u)); height: calc(23 * var(--u));
+        background: none; border: 0; padding: 0; border-radius: calc(5 * var(--u)); cursor: pointer; color: #8d8d8b;
+        transition: color 0.15s ease-out, background-color 0.15s ease-out;
       }
-      .copy svg { width: calc(11 * var(--u)); height: calc(11 * var(--u)); }
-      .copy:hover { color: var(--ink); }
-      .docs-link { left: calc(369 * var(--u)); top: calc(277 * var(--u)); font-size: calc(12.2 * var(--u)); color: #a3a3a0; text-underline-offset: calc(4 * var(--u)); text-decoration-thickness: calc(1.4 * var(--u)); }
+      .copy svg { width: calc(12 * var(--u)); height: calc(12 * var(--u)); }
+      .copy:hover { color: var(--ink); background: rgba(255, 255, 255, 0.06); }
+      .copy .i-done, .copy[data-state='done'] .i-copy { display: none; }
+      .copy[data-state='done'] .i-done { display: block; }
+      .copy[data-state='done'] { color: var(--ink); }
+      .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+      .docs-link { font-size: calc(12.2 * var(--u)); color: #a3a3a0; text-underline-offset: calc(4 * var(--u)); text-decoration-thickness: calc(1.4 * var(--u)); }
       .docs-link:hover { color: var(--ink); }
 
-      .scene { inset: 0; margin: 0; pointer-events: none; }
+      .scene { top: 0; bottom: 0; margin: 0; pointer-events: none; }
       .scene-inner { position: absolute; inset: 0; }
       .agent {
         position: absolute; left: calc(104 * var(--u)); top: calc(385 * var(--u)); width: calc(269 * var(--u)); height: calc(169 * var(--u));
@@ -599,7 +640,8 @@ const replies = [
       .path { background: #161616; border: 1px solid #262626; border-radius: 12px; padding: 22px 24px; display: grid; gap: 14px; align-content: start; min-width: 0; }
       .path h3 { margin: 0; font-size: 17px; font-weight: 500; color: var(--ink); }
       .path-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-      .path .copy { font-size: 14px; }
+      .path .copy { width: 30px; height: 30px; margin: -6px -8px -6px 0; border-radius: 6px; }
+      .path .copy svg { width: 15px; height: 15px; }
       .path pre { white-space: pre-wrap; overflow-wrap: normal; }
       .path .nb { white-space: nowrap; }
       .path pre { margin: 0; overflow-x: auto; font-family: var(--mono); font-size: 14px; line-height: 1.75; color: #d4d4d2; }
@@ -618,8 +660,6 @@ const replies = [
       .foot a { color: #8d8984; text-decoration: none; }
       .foot a:hover { color: var(--ink); }
 
-      /* Past 1640px the composition stops growing and sits centred on the same ground. */
-      .stage { max-width: 1640px; margin: 0 auto; }
       body { background: radial-gradient(ellipse 80% 50% at 60% 0%, rgba(54, 50, 46, 0.35), transparent 70%) var(--ground); }
 
       /*
@@ -628,8 +668,9 @@ const replies = [
        * hero would set the headline under 40px.
        */
       @media (max-width: 860px) {
-        .stage { aspect-ratio: auto; display: grid; gap: 28px; padding: 18px 20px 0; overflow: visible; }
+        .stage { height: auto; display: grid; gap: 28px; padding: 18px 20px 0; overflow: visible; }
         .stage > * { position: static; }
+        .nav, .hero, .scene { left: auto; width: auto; }
         .nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: auto; flex-wrap: wrap; }
         .wordmark, .links, .cta { position: static; }
         .wordmark { font-size: 24px; }
@@ -642,10 +683,11 @@ const replies = [
         h1 span { display: inline; }
         .license { font-size: 14px; }
         .subhead { white-space: normal; font-size: 17px; line-height: 1.5; max-width: 34ch; }
-        .command { width: 100%; max-width: 380px; height: 46px; padding: 0 14px; border-radius: 8px; }
+        .actions { display: grid; gap: 16px; justify-items: start; width: 100%; }
+        .command { width: 100%; max-width: 380px; height: 46px; justify-content: space-between; padding: 0 4px 0 14px; border-radius: 8px; }
         .command code { font-size: 14px; }
-        .copy { font-size: 13px; gap: 6px; }
-        .copy svg { width: 13px; height: 13px; }
+        .command .copy { width: 38px; height: 38px; border-radius: 6px; }
+        .command .copy svg { width: 15px; height: 15px; }
         .docs-link { font-size: 15px; }
         /* The scene re-stages instead of shrinking: the agent panel at reading size, then a crop of
            the boards at the same scale, so card text stays at 11px or more. */
