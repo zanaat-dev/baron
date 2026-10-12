@@ -271,7 +271,7 @@ A small chat window: title row, a right-aligned user bubble (#38383a), and a rep
 ### Do:
 - **Do** keep amber for light, the active role and focus (The One Light Rule).
 - **Do** set every command, id, role and native state in Geist Mono, and all prose in Funnel Sans.
-- **Do** draw product illustration in CSS, SVG or canvas from real component markup; ship no rasters for the scene.
+- **Do** draw product illustration in CSS, SVG or canvas from real component markup; ship no rasters for the scene. The one exception is the share card `public/og.png` (1200 x 630), since link unfurlers do not run the page: it is the hero itself, captured at a 1600 x 840 viewport, device pixel ratio 1.5, `--u` forced to 1.4px, nav links, the flow below and the scrollbar hidden, traces settled, then downscaled to 1200 x 630. Recapture it whenever the hero changes.
 - **Do** keep running secondary text at Warm Stone (`muted`) or brighter; it holds 5.5:1 on every surface.
 - **Do** name trackers in text; illustrative boards use each tracker's own column names.
 - **Do** give every animated state a reduced-motion resting state that shows the finished picture.
