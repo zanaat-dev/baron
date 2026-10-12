@@ -20,6 +20,10 @@
   --sl-color-gray-5: #262626;
   --sl-color-gray-6: #161616;
   --sl-color-black: #0e0e0f;
+
+  /* Starlight's 45rem at 16px ran about 100 characters a line; a slightly larger body on a slightly
+     narrower column keeps prose near 80, closer to what reads well for long setup guides. */
+  --sl-content-width: 40rem;
 }
 
 :root[data-theme="light"] {
@@ -48,7 +52,14 @@ h3,
 }
 
 .sl-markdown-content {
+  font-size: 1.0625rem;
   line-height: 1.65;
+}
+
+/* Bold asks for 700, which is not loaded; 600 is, so emphasis renders in the real face instead of a
+   synthesized one. */
+.sl-markdown-content :is(strong, b) {
+  font-weight: 600;
 }
 
 /* Inline code is a machine-read name: mono, a quiet chip, the landing's code tint rather than amber. */
@@ -80,6 +91,7 @@ h3,
   letter-spacing: -0.01em;
   text-transform: lowercase;
   color: var(--sl-color-white);
+  gap: 0.42em;
 }
 
 ::selection {
@@ -89,6 +101,26 @@ h3,
 .site-title img {
   height: 1.7rem;
   width: auto;
+}
+
+/* The phone menu button is a graphite button, as on the landing, not the brightest disc on the page. */
+button.sl-menu-button {
+  background-color: #3a3937;
+  color: var(--sl-color-gray-1);
+  box-shadow: 0 0 0 1px #575551, var(--sl-shadow-md);
+}
+button.sl-menu-button:has(~ :popover-open) {
+  background-color: var(--sl-color-gray-5);
+  box-shadow: 0 0 0 1px #575551;
+}
+:root[data-theme="light"] button.sl-menu-button {
+  background-color: var(--sl-color-gray-6);
+  color: var(--sl-color-gray-1);
+  box-shadow: 0 0 0 1px var(--sl-color-gray-5), var(--sl-shadow-md);
+}
+:root[data-theme="light"] button.sl-menu-button:has(~ :popover-open) {
+  background-color: var(--sl-color-gray-5);
+  box-shadow: none;
 }
 
 /* The current page reads as the landing's lit state: amber on a dark amber wash, not a filled block. */

@@ -131,7 +131,7 @@ build as shipped, departures included.
 Scope: this system is the landing's. The Starlight docs (src/styles/theme.css) speak the same
 language since #269: Funnel Sans / Geist Mono, the warm near-black ground and warm greys, amber as
 the only accent, medium-weight headings, the Baron mark beside a lowercase wordmark. The docs keep a
-light theme for reading (warm paper, a darker amber for contrast); the landing stays dark only. -->
+light theme for reading (warm paper, a darker amber for contrast); the landing stays dark only. Docs prose is 17px on a 40rem column (about 80 to 85 characters a line), bold renders at the loaded 600, the mark sits 0.42em from the wordmark as on the landing, the phone menu button is graphite, and the two Funnel Sans weights are preloaded (src/components/Head.astro). -->
 
 ## Overview
 

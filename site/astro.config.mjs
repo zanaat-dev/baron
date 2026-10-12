@@ -52,11 +52,12 @@ export default defineConfig({
       customCss: [
         '@fontsource/funnel-sans/400.css',
         '@fontsource/funnel-sans/500.css',
+        '@fontsource/funnel-sans/600.css',
         '@fontsource/geist-mono/400.css',
         '@fontsource/geist-mono/500.css',
         './src/styles/theme.css',
       ],
-      components: { Footer: './src/components/Footer.astro' },
+      components: { Footer: './src/components/Footer.astro', Head: './src/components/Head.astro' },
       tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 3 },
       plugins: [
         starlightLlmsTxt({
