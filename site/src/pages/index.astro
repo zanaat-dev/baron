@@ -4,6 +4,10 @@ import '@fontsource/funnel-sans/500.css';
 import '@fontsource/funnel-sans/600.css';
 import '@fontsource/geist-mono/400.css';
 import '@fontsource/geist-mono/500.css';
+// The two Funnel Sans weights the first viewport sets; preloading them lets the headline and lede
+// arrive in their own face instead of swapping in after first paint and reflowing.
+import funnel400 from '@fontsource/funnel-sans/files/funnel-sans-latin-400-normal.woff2?url';
+import funnel500 from '@fontsource/funnel-sans/files/funnel-sans-latin-500-normal.woff2?url';
 
 const REPO = 'https://github.com/zanaat-dev/baron';
 const NPM = 'https://www.npmjs.com/package/@zanaat/baron-mcp-server';
@@ -127,7 +131,11 @@ const SHARE_ALT =
     <meta name="twitter:image" content={SHARE_IMAGE} />
     <meta name="twitter:image:alt" content={SHARE_ALT} />
     <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0e0e0f" />
+    <link rel="preload" href={funnel500} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={funnel400} as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt" />
   </head>
   <body>
@@ -627,6 +635,7 @@ const SHARE_ALT =
         display: grid; gap: clamp(22px, calc(28 * var(--u)), 40px);
       }
       .lede { display: grid; gap: 14px; max-width: 62ch; }
+      .flow p, .gaps dd, .recipes span { text-wrap: pretty; }
       .lede p, .band-lede { font-size: clamp(16px, calc(16 * var(--u)), 21px); line-height: 1.55; color: var(--muted); max-width: 62ch; }
 
       .table-wrap { overflow-x: auto; border: 1px solid #262626; border-radius: 10px; }
@@ -735,7 +744,8 @@ const SHARE_ALT =
            the boards at the same scale, so card text stays at 11px or more. */
         .scene { position: relative; width: 100%; }
         .scene-inner { --u: 1.15px; position: relative; inset: auto; display: grid; gap: 14px; }
-        .agent { position: relative; left: auto; top: auto; width: min(100%, calc(269 * var(--u))); }
+        /* Full column width, so its edges line up with the boards below. */
+        .agent { position: relative; left: auto; top: auto; width: 100%; }
         .boards { position: relative; inset: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 36px; perspective: none; }
         .boards > .card { display: none; }
         .board { position: relative; left: auto; top: auto; width: auto; height: auto; transform: none; padding-bottom: 10px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09); }

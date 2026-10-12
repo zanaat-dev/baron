@@ -180,7 +180,7 @@ A warm-neutral dark palette with one amber voice; greys lean faintly warm, never
 - **Sunk Surface** (`surface-sunk`): content panels and install cards. **Header Surface** (`surface-header`): table header row. **Command Surface** (`surface-command`): the init command box. **Raised Surface** (`surface-raised`): window-like objects (agent panel, transcript).
 - **Hairlines** (`hairline`, `hairline-soft`, `hairline-raised`): 1px borders and dividers; raised objects take the lighter `hairline-raised`.
 - **Graphite** (`graphite-fill`, `graphite-stroke`): the filled-and-stroked button.
-- **Graphite scrollbar**: the page scrollbar is themed `scrollbar-color: graphite-fill on ground`, so the one browser surface always on screen belongs to the palette.
+- **Graphite scrollbar**: the page scrollbar is themed `scrollbar-color: graphite-fill on ground`, so the one browser surface always on screen belongs to the palette. The mobile browser chrome takes the ground through `theme-color` (the docs switch it with the system theme), and the home-screen icon `public/apple-touch-icon.png` is the mark in Bone on the ground, drawn from `src/assets/mark-dark.svg`.
 
 ### Named Rules
 **The One Light Rule.** Amber marks light, the active role and focus; nothing else. If an element is amber, it must be either where the agent's action landed or where the keyboard is.
@@ -199,7 +199,7 @@ A warm-neutral dark palette with one amber voice; greys lean faintly warm, never
 - **Display** (500, 47 comp units, about 47px at 1024 and up to 59px at the 1280px cap; 0.99; -0.012em): the hero headline only, two set lines. On narrow screens `display-narrow` (clamp 34–52px, 1.02) and the lines run inline.
 - **Headline** (500, clamp 26–44px, 1.1, -0.015em, balanced wrap): one per band below the hero.
 - **Title** (500, 17px): card titles such as the install paths.
-- **Body lede** (400, clamp 16–21px, 1.55, max 62ch): the paragraph under a headline, in Warm Stone.
+- **Body lede** (400, clamp 16–21px, 1.55, max 62ch): the paragraph under a headline, in Warm Stone. Running text below the hero sets `text-wrap: pretty`, so no paragraph ends on a single word.
 - **Body** (400, clamp 15–18px, 1.55): list descriptions and gap definitions.
 - **Mono** (Geist Mono 400, 0.92em of its context): inline code, state names, role names, ids.
 - **Mono label** (Geist Mono 500, 0.86em): table column headers (role names).
@@ -216,7 +216,7 @@ The first viewport is a fixed composition of 1024 x 687 comp units, every hero e
 
 Below the hero the page is ordinary flow on an 814-unit column (the hero's own column), with section gaps of clamp(72px, 110 units, 150px). Bands are single column except the recipes band, which pairs text and transcript at 1 : 1.15; the transcript is sticky (32px from the top) so it stays in view beside the longer recipe list, and returns to flow on phones. Transcript lines hang: a wrapped step continues under its text, past the check. Gap policies sit in three hairline-divided columns.
 
-At 860px and below the stage drops its fixed composition: copy returns to flow at reading sizes with 20px gutters, the agent panel renders at a fixed 1.15px unit, and the four boards lie flat in a two-by-two grid, each showing only its in_progress column with the card, so card text stays at 11px or more. Multi-column bands collapse to one; the role table becomes one bordered block per tracker with each state labelled by its role.
+At 860px and below the stage drops its fixed composition: copy returns to flow at reading sizes with 20px gutters, the agent panel renders at a fixed 1.15px unit across the full column, so its edges line up with the boards, and the four boards lie flat in a two-by-two grid, each showing only its in_progress column with the card, so card text stays at 11px or more. Multi-column bands collapse to one; the role table becomes one bordered block per tracker with each state labelled by its role.
 
 ## Elevation & Depth
 
