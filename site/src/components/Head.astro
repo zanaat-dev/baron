@@ -1,0 +1,11 @@
+---
+import Default from '@astrojs/starlight/components/Head.astro';
+// The body and heading weights every docs page sets; preloading them lets the first paint use the
+// real face instead of swapping it in and reflowing the page, as the landing does.
+import funnel400 from '@fontsource/funnel-sans/files/funnel-sans-latin-400-normal.woff2?url';
+import funnel500 from '@fontsource/funnel-sans/files/funnel-sans-latin-500-normal.woff2?url';
+---
+
+<Default />
+<link rel="preload" href={funnel500} as="font" type="font/woff2" crossorigin />
+<link rel="preload" href={funnel400} as="font" type="font/woff2" crossorigin />
