@@ -47,6 +47,7 @@ export const TOOL_NAMES = {
 export const OP_ROUTES: Record<string, Readonly<Record<string, string>>> = {
   [TOOL_NAMES.issueRead]: {
     get: MCP_TOOL_NAMES.get,
+    comments: MCP_TOOL_NAMES.comments,
     query: MCP_TOOL_NAMES.query,
     iterations: MCP_TOOL_NAMES.iterations,
     classify: MCP_TOOL_NAMES.classify,
@@ -168,7 +169,8 @@ export const CONSOLIDATED_ISSUE_DEFINITIONS: readonly ToolDefinition[] = [
     name: TOOL_NAMES.issueRead,
     mutatesProvider: false,
     description:
-      'Read work items. ops: `get` (id) → one normalized issue; `query` (role / typeRole / ' +
+      'Read work items. ops: `get` (id) → one normalized issue; `comments` (id) → its comments, ' +
+      'oldest first; `query` (role / typeRole / ' +
       'assignee, `@me` allowed / iteration, `@current` allowed / limit) → a filtered list; ' +
       "`iterations` (no args) → the provider's sprints, each with a `current` flag, empty where the " +
       'provider has none.',

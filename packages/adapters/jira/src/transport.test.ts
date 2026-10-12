@@ -462,3 +462,25 @@ describe('the Jira transport through the core', () => {
     expect(moved.role).toBe('done');
   });
 });
+
+describe('jira listComments', () => {
+  it('follows the offset pages to the total, oldest first', async () => {
+    const comment = (id: string, created: string) => ({
+      id,
+      body: `note ${id}`,
+      author: { emailAddress: 'dev@acme.test' },
+      created,
+    });
+    const { t, sent } = transport([
+      { body: { comments: [comment('1', '2026-10-01'), comment('2', '2026-10-02')], total: 3 } },
+      { body: { comments: [comment('3', '2026-10-03')], total: 3 } },
+    ]);
+    const comments = await t.listComments('PROJ-7');
+    expect(comments.map((c) => c.id)).toEqual(['1', '2', '3']);
+    expect(comments[0]).toMatchObject({ body: 'note 1', author: 'dev@acme.test' });
+    expect(sent.map((s) => s.url)).toEqual([
+      expect.stringMatching(/\/issue\/PROJ-7\/comment\?orderBy=created&startAt=0&/),
+      expect.stringMatching(/\/issue\/PROJ-7\/comment\?orderBy=created&startAt=2&/),
+    ]);
+  });
+});

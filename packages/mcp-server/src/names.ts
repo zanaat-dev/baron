@@ -13,6 +13,7 @@ export const MCP_TOOL_NAMES = {
   block: 'baron_issue_block',
   unblock: 'baron_issue_unblock',
   comment: 'baron_issue_comment',
+  comments: 'baron_issue_comments',
   link: 'baron_issue_link',
   assign: 'baron_issue_assign',
   iterations: 'baron_issue_iterations',

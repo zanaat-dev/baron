@@ -332,6 +332,8 @@ async function dispatchOp(ports: RecipePorts, op: RecipeOp, params: Params): Pro
       });
     case RECIPE_OPS.issueGet:
       return issues(ports, op).get(reqStr(params, 'id', op));
+    case RECIPE_OPS.issueComments:
+      return issues(ports, op).comments(reqStr(params, 'id', op));
     case RECIPE_OPS.issueTrace:
       // A read model over whatever ports are bound: each part it cannot fill is named in `missing`.
       return traceIssue(ports, reqStr(params, 'id', op));

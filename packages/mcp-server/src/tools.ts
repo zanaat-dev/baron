@@ -164,6 +164,19 @@ export const TOOL_DEFINITIONS: readonly ToolDefinition[] = [
     },
   },
   {
+    name: MCP_TOOL_NAMES.comments,
+    mutatesProvider: false,
+    description:
+      "An issue's comments, oldest first, each body as the provider stores it (Azure keeps HTML). " +
+      'Read before posting evidence so the same note is not added twice.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id'],
+      properties: { id: { type: 'string', minLength: 1 } },
+    },
+  },
+  {
     name: MCP_TOOL_NAMES.trace,
     mutatesProvider: false,
     description:
@@ -1104,6 +1117,8 @@ export function callTool(
       return run(() => port.create(toDraft(args)));
     case MCP_TOOL_NAMES.get:
       return run(() => port.get(requireString(args, 'id')));
+    case MCP_TOOL_NAMES.comments:
+      return run(() => port.comments(requireString(args, 'id')));
     case MCP_TOOL_NAMES.update: {
       const title = optionalString(args, 'title');
       const body = optionalString(args, 'body');

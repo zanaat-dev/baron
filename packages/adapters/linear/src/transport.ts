@@ -311,6 +311,45 @@ export function createLinearTransport(opts: LinearTransportOptions): IssuesTrans
       return { id: data.commentCreate.comment.id, body: data.commentCreate.comment.body };
     },
 
+    async listComments(id: string): Promise<readonly NativeComment[]> {
+      type Page = {
+        issue: {
+          comments: {
+            nodes: {
+              id: string;
+              body: string;
+              createdAt?: string;
+              url?: string;
+              user?: { email?: string | null; name?: string | null } | null;
+            }[];
+            pageInfo: { hasNextPage: boolean; endCursor?: string | null };
+          };
+        };
+      };
+      const comments: NativeComment[] = [];
+      let after: string | null = null;
+      do {
+        const data: Page = await gql<Page>(
+          'query($id: String!, $after: String) { issue(id: $id) { comments(first: 100, after: $after) { nodes { id body createdAt url user { email name } } pageInfo { hasNextPage endCursor } } } }',
+          { id, after },
+        );
+        for (const c of data.issue.comments.nodes) {
+          comments.push({
+            id: c.id,
+            body: c.body,
+            author: c.user?.email ?? c.user?.name ?? undefined,
+            createdAt: c.createdAt,
+            url: c.url,
+          });
+        }
+        after = data.issue.comments.pageInfo.hasNextPage
+          ? (data.issue.comments.pageInfo.endCursor ?? null)
+          : null;
+      } while (after !== null);
+      // Sorted here so the order never rests on Linear's pagination defaults: oldest first, as everywhere.
+      return comments.sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? ''));
+    },
+
     async linkIssues(fromId: string, toId: string, nativeLinkType: string): Promise<void> {
       await gql(
         'mutation($input: IssueRelationCreateInput!) { issueRelationCreate(input: $input) { success } }',
