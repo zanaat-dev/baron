@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   getColumns: vi.fn(),
   getTeamIterations: vi.fn(),
   updateWorkItemColumn: vi.fn(),
+  getBoards: vi.fn(),
+  getBoard: vi.fn(),
 }));
 
 vi.mock('azure-devops-node-api', () => ({
@@ -21,6 +23,8 @@ vi.mock('azure-devops-node-api', () => ({
       getColumns: mocks.getColumns,
       getTeamIterations: mocks.getTeamIterations,
       updateWorkItemColumn: mocks.updateWorkItemColumn,
+      getBoards: mocks.getBoards,
+      getBoard: mocks.getBoard,
     }),
   })),
   getPersonalAccessTokenHandler: vi.fn(() => ({})),
@@ -51,10 +55,38 @@ const TASKBOARD = {
   ],
 };
 
+/** BeeMaster's PBI board on 2026-10-06: the states as columns, and no 'In Progress'. */
+const STORIES_BOARD = {
+  id: 'b-stories',
+  name: 'Stories',
+  fields: { columnField: { referenceName: 'WEF_ABC_Kanban.Column' } },
+  columns: [
+    { name: 'New', stateMappings: { 'Product Backlog Item': 'New' } },
+    { name: 'Active', stateMappings: { 'Product Backlog Item': 'Active' } },
+    { name: 'Test', stateMappings: { 'Product Backlog Item': 'Test' } },
+    { name: 'Closed', stateMappings: { 'Product Backlog Item': 'Closed' } },
+  ],
+};
+const FEATURES_BOARD = {
+  id: 'b-features',
+  name: 'Features',
+  fields: { columnField: { referenceName: 'WEF_DEF_Kanban.Column' } },
+  columns: [{ name: 'New', stateMappings: { Feature: 'New' } }],
+};
+const pbiOnBoard = item({
+  'System.WorkItemType': 'Product Backlog Item',
+  'System.State': 'New',
+  'WEF_ABC_Kanban.Column': 'New',
+});
+
 describe('azure board column', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getColumns.mockResolvedValue(TASKBOARD);
+    mocks.getBoards.mockResolvedValue([{ id: 'b-features' }, { id: 'b-stories' }]);
+    mocks.getBoard.mockImplementation(async (_team: unknown, id: string) =>
+      id === 'b-stories' ? STORIES_BOARD : FEATURES_BOARD,
+    );
     mocks.getTeamIterations.mockResolvedValue([
       { id: 'iter-5', name: 'Sprint 5', path: 'Proj\\Sprint 5' },
     ]);
@@ -104,6 +136,45 @@ describe('azure board column', () => {
     expect(
       await transport().boardColumnUnreachable?.('7', { state: 'Test', boardColumn: 'Test' }),
     ).toBeUndefined();
+  });
+
+  describe("a backlog item's column is checked against the board that owns its Kanban field", () => {
+    beforeEach(() => mocks.getWorkItem.mockResolvedValue(pbiOnBoard));
+
+    it("a column the item's board does not have (BeeMaster, 2026-10-06)", async () => {
+      expect(
+        await transport().boardColumnUnreachable?.('7', {
+          state: 'Active',
+          boardColumn: 'In Progress',
+        }),
+      ).toMatch(
+        /'Stories' board has no column 'In Progress' \(it has: New, Active, Test, Closed\)/,
+      );
+    });
+
+    it('a column whose state mapping for this type disagrees with the target state', async () => {
+      expect(
+        await transport().boardColumnUnreachable?.('7', { state: 'Active', boardColumn: 'Test' }),
+      ).toMatch(/column 'Test' holds Product Backlog Item items in state 'Test'/);
+    });
+
+    it("writes the board's own spelling of the column", async () => {
+      mocks.updateWorkItem.mockResolvedValue(pbiOnBoard);
+      const target = { state: 'Active', boardColumn: 'active' };
+      expect(await transport().boardColumnUnreachable?.('7', target)).toBeUndefined();
+      await transport().applyTarget('7', target);
+      const ops = mocks.updateWorkItem.mock.calls[0]?.[1] as Array<{ path: string; value: string }>;
+      expect(ops.at(-1)).toMatchObject({ path: '/fields/WEF_ABC_Kanban.Column', value: 'Active' });
+    });
+
+    it("still writes the field when the item is only on another team's board", async () => {
+      // This team's boards own neither field, so nothing here can be checked; Azure validates the
+      // column on write, which keeps a bad one loud.
+      mocks.getBoards.mockResolvedValue([{ id: 'b-features' }]);
+      expect(
+        await transport().boardColumnUnreachable?.('7', { state: 'Active', boardColumn: 'Doing' }),
+      ).toBeUndefined();
+    });
   });
 
   // Measured on BeeMaster (2026-10-06): an uncustomized Taskboard reports no columns at all, because
