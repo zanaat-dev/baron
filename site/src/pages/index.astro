@@ -8,6 +8,7 @@ import '@fontsource/geist-mono/500.css';
 // arrive in their own face instead of swapping in after first paint and reflowing.
 import funnel400 from '@fontsource/funnel-sans/files/funnel-sans-latin-400-normal.woff2?url';
 import funnel500 from '@fontsource/funnel-sans/files/funnel-sans-latin-500-normal.woff2?url';
+import Mark from '../assets/mark-dark.svg';
 
 const REPO = 'https://github.com/zanaat-dev/baron';
 const NPM = 'https://www.npmjs.com/package/@zanaat/baron-mcp-server';
@@ -142,9 +143,9 @@ const SHARE_ALT =
     <a class="skip" href="#main">Skip to content</a>
     <div class="stage">
       <header class="nav">
-        <a class="wordmark" href="/" aria-label="Baron home">baron</a>
+        <a class="wordmark" href="/" aria-label="Baron home"><Mark aria-hidden="true" />baron</a>
         <nav class="links" aria-label="Primary">
-          <a href={DOCS}>Docs</a>
+          <a class="nav-docs" href={DOCS}>Docs</a>
           <a href={REPO}>GitHub</a>
           <a href={NPM}>npm</a>
         </nav>
@@ -500,7 +501,10 @@ const SHARE_ALT =
       .wordmark {
         position: absolute; left: calc(104 * var(--u)); top: calc(13 * var(--u));
         font-size: calc(27 * var(--u)); font-weight: 400; color: #dddbda; text-decoration: none; letter-spacing: -0.01em;
+        display: inline-flex; align-items: center; gap: 0.42em;
       }
+      /* The docs header's proportion: the mark stands 1.26 times the wordmark's size, centred on it. */
+      .wordmark :global(svg) { flex: none; width: auto; height: 1.26em; }
       .links { position: absolute; left: calc(682 * var(--u)); top: calc(20 * var(--u)); display: flex; gap: calc(19 * var(--u)); }
       .links a { font-size: calc(13 * var(--u)); color: var(--quiet); text-decoration: none; font-weight: 500; }
       .links a:hover { color: var(--ink); }
@@ -784,6 +788,12 @@ const SHARE_ALT =
         .roles td::before { content: attr(data-role); color: var(--quiet); }
         .roles td.on::before { color: var(--amber); }
         .foot { width: auto; margin: 0 20px; }
+      }
+
+      /* Docs and Get started open the same page; on a small phone the nav keeps the button, so the
+         mark, the links and the button still share one row. */
+      @media (max-width: 440px) {
+        .nav-docs { display: none; }
       }
     </style>
   </body>

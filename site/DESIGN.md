@@ -256,7 +256,7 @@ The install command as an object: Command Surface, a hairline, `rounded.sm`, Gei
 - **Internal Padding:** content panel 36/34 comp units (24px 20px on phones); install card 22px 24px.
 
 ### Navigation
-Wordmark "baron" lowercase at 400 weight in Funnel Sans on the left; Docs, GitHub, npm as 500-weight links (13 comp units, 14px on phones) turning Bone on hover; set in Quiet (#8a8580, 5.3:1 on ground); the graphite Get started button at the far right. On phones it wraps to one row with links pushed right.
+The Baron mark (`src/assets/mark-dark.svg`, inline and hidden from assistive tech, 1.26em tall, 0.42em from the text, the docs header's proportion) beside the wordmark "baron" lowercase at 400 weight in Funnel Sans on the left, the mark on the content column's edge; Docs, GitHub, npm as 500-weight links (13 comp units, 14px on phones) turning Bone on hover; set in Quiet (#8a8580, 5.3:1 on ground); the graphite Get started button at the far right. On phones it sits on one row with the links pushed right; at 440px and below the Docs link hides, since Get started opens the same page, so the row still fits.
 
 ### Role table (signature)
 The idea of the product as a table: roles across the top in Geist Mono labels, one row per tracker with its native states in mono, a Bone row header with a small note under it. The `in_progress` column is the one amber moment in the band: amber header, Amber Wash fill, amber side rules, Amber Ink text. Unmapped roles show a dash. Rows lift to #1b1b1b on hover. On phones each tracker becomes its own bordered block.
