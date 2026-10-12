@@ -9,6 +9,8 @@ const SHARE_IMAGE = `${SITE}/og.png`;
 
 export default defineConfig({
   site: SITE,
+  // The docs have no index page of their own; /docs/ lands on the first page instead of a 404.
+  redirects: { '/docs': '/docs/getting-started/' },
   // The docs carry no raster images that need resizing, and sharp is a native dependency this
   // monorepo would otherwise have to install and approve for nothing.
   image: { service: passthroughImageService() },
@@ -28,6 +30,20 @@ export default defineConfig({
         { tag: 'meta', attrs: { property: 'og:image:width', content: '1200' } },
         { tag: 'meta', attrs: { property: 'og:image:height', content: '630' } },
         { tag: 'meta', attrs: { name: 'twitter:image', content: SHARE_IMAGE } },
+        // The docs follow the system theme, so the browser chrome takes the ground of each.
+        {
+          tag: 'meta',
+          attrs: { name: 'theme-color', media: '(prefers-color-scheme: dark)', content: '#0e0e0f' },
+        },
+        {
+          tag: 'meta',
+          attrs: {
+            name: 'theme-color',
+            media: '(prefers-color-scheme: light)',
+            content: '#fbfaf7',
+          },
+        },
+        { tag: 'link', attrs: { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' } },
       ],
       social: [{ icon: 'github', label: 'GitHub', href: REPO }],
       // docs/ at the repository root is the source; the site copy is generated (scripts/sync-docs.mjs).
