@@ -26,10 +26,18 @@ describe('azure ci listRuns', () => {
     // moment ago on the asked-for branch was invisible — the same query returned nothing at limit 5
     // and the build at limit 50.
     mocks.getBuilds.mockResolvedValue([
-      { id: 4681, status: 32, sourceBranch: 'refs/heads/task/2003-x', definition: { id: 59 } },
+      {
+        id: 4681,
+        status: 32,
+        sourceBranch: 'refs/heads/task/2003-x',
+        sourceVersion: '9f1c2e7',
+        definition: { id: 59 },
+      },
     ]);
     const runs = await transport().listRuns({ branch: 'task/2003-x', limit: 5 });
     expect(runs.map((r) => r.id)).toEqual(['4681']);
+    // The commit the build ran on: what ties a run, and the deploy after it, to a merge.
+    expect(runs[0]?.sha).toBe('9f1c2e7');
 
     const args = mocks.getBuilds.mock.calls[0] as unknown[];
     expect(args[0]).toBe('proj');

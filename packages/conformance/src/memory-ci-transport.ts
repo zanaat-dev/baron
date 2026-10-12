@@ -30,6 +30,7 @@ const DEFAULT_RUNS: readonly NativeRun[] = [
     result: 'succeeded',
     branch: 'main',
     number: '1',
+    sha: 'sha-run-1',
     url: 'mem://run/1',
   },
   {
@@ -39,6 +40,7 @@ const DEFAULT_RUNS: readonly NativeRun[] = [
     status: 'inProgress',
     branch: 'main',
     number: '2',
+    sha: 'sha-run-2',
     url: 'mem://run/2',
   },
   // A pull-request validation build: on the provider's PR ref, so it has no source branch.
@@ -50,6 +52,7 @@ const DEFAULT_RUNS: readonly NativeRun[] = [
     result: 'succeeded',
     pullRequestId: '41',
     number: '3',
+    sha: 'sha-run-3',
     url: 'mem://run/3',
   },
 ];
