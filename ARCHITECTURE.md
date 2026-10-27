@@ -60,7 +60,7 @@ deployment, not just work tracking (decision #17).
 | 23 | `trace` is a read model, not a port | "Where is this item, end to end" is answered by **composing the bound ports** on the canonical branch name the core already derives (`issue.trace` / `baron_issue_read op=trace`): issue → branch → most recent PR (any state) + checks → latest CI runs on the branch → most recent deployment whose ref is the branch. No adapter learns anything; a part a port cannot fill is `null` **and named in `missing`** with the reason. The join to a deployment of the merged commit is lossy (it carries the target branch's name) and says so. `actor` and `review` stay parked: `actor` needs an identity decision GitHub and Azure cannot express natively, `review` is a consuming-side product nobody has asked for |
 | 22 | Recipe durability | Every run is **journaled** (`.baron/runs/<id>.jsonl`, append-only: inputs, answers, each `do` with an idempotency key + its result) and **resumable** (`baron run --resume <id>`, `baron_recipe_run { resume }`): completed steps are replayed from the journal, never re-executed (except reads made after the last completed write, which are taken again so a run stopped by a stale answer can go on); a step's key includes its interpolated parameters, so changed inputs run again; a changed recipe refuses to resume. Compensation (`undo:` on a mutating step) is **deferred** until a real half-completed run gives it a shape |
 | 21 | Reference-flow fidelity & the local-git boundary | Built-ins mirror the **Beetegre-V2 reference flow**: `task-new` CREATES, `task-start` starts an **existing** item on its **core-derived canonical branch** (`<prefix>/<id>-<slug>`, from the type role — never invented, unset for containers), `task-finish` opens the PR **without moving the role** — what merge does is the PROVIDER's, not a Baron rule: a provider whose `done` is a closed state and whose native PR↔item link uses a closing keyword (GitHub `Closes #N`) closes the item on merge, landing it in `done`; one that only mentions the item (Azure `AB#N`) leaves it, and `task-move`/`task-sync` settles it. **Boundary:** Baron owns provider truth (work items, remote branches, PRs); the LOCAL working tree (status/fetch/switch/push) belongs to the harness/skill layer around the recipe call |
-| 24 | Work-state orchestration ("factory rails") — *Proposed* | Baron owns the **stage machine of a work item** and may **dispatch a stage** to a coding agent through a pluggable runner — by default the customer's own CI (`ci.run.trigger` of a pipeline template) using the customer's own model credentials. It never manages interactive sessions, worktrees, sandboxes or model access: isolation and compute stay with the CI or the harness. Autonomy is policy, not code: every provider mutation is `allow`, `approve` or `block` per type role, and an `approve` posts its question to the item and lets work that does not depend on the answer continue. Every agent-made change is journaled with a non-human actor. Narrows ROADMAP's "will not do: agent orchestration" to "session or runtime orchestration". Settled by written evidence collected until 2026-10-27; see the section below |
+| 24 | Work-state orchestration ("factory rails") — *Withdrawn 2026-10-27* | Baron owns the **stage machine of a work item** and may **dispatch a stage** to a coding agent through a pluggable runner — by default the customer's own CI (`ci.run.trigger` of a pipeline template) using the customer's own model credentials. It never manages interactive sessions, worktrees, sandboxes or model access: isolation and compute stay with the CI or the harness. Autonomy is policy, not code: every provider mutation is `allow`, `approve` or `block` per type role, and an `approve` posts its question to the item and lets work that does not depend on the answer continue. Every agent-made change is journaled with a non-human actor. Would have narrowed ROADMAP's "will not do: agent orchestration" to "session or runtime orchestration". Withdrawn: the written evidence collected until 2026-10-27 fell short of the bar set in advance (one answer of eight); see the section below |
 
 ## The semantic role layer (decision #4)
 
@@ -215,7 +215,17 @@ README that sells the single-pane pain in 60 seconds, and distribution — with 
 (GitHub Sponsors, paid support, hosted-beta waitlist) validating willingness-to-pay before any
 entitlement code is written.
 
-## Work-state orchestration (decision #24, proposed)
+## Work-state orchestration (decision #24, withdrawn)
+
+**Outcome (2026-10-27).** Withdrawn, by the rule at the end of this section. The written survey
+([discussion #248](https://github.com/zanaat-dev/baron/discussions/248)) drew one answer, from an AI
+agent describing its own practice rather than a team running a tracker; no answer described a
+recent case of tracker state going wrong with agents, and no Azure DevOps team asked to try Baron.
+The public question in microsoft/azure-devops-mcp was removed from that repository, and no issue or
+pull request was opened by anyone other than the maintainer. Baron stays the open work-state and
+process component: it keeps work items, pull requests and CI state correct when agents write to
+them, and does not dispatch agents. The correctness work named below (#227–#239) is unaffected. The
+proposal is kept as written, so a later revisit starts from it.
 
 Teams are moving from one agent in one session to fleets of agents working a backlog: triage,
 spec, implementation, review, verification, ship, monitor. The products that run those fleets
@@ -263,7 +273,7 @@ after.
 - Whether the first runner template is Azure Pipelines or GitHub Actions.
 
 **How it is decided.** In writing, by 2026-10-27: answers to a public question
-([microsoft/azure-devops-mcp#1676](https://github.com/microsoft/azure-devops-mcp/discussions/1676)),
+(microsoft/azure-devops-mcp discussion #1676, since removed),
 a short written survey, a Turkish-language community post, and usage signals (installs, issues
 opened by people other than the maintainer). It is accepted if at least eight substantive written
 answers arrive, at least three of them describe a recent case of tracker state going wrong with
