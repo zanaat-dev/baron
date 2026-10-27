@@ -50,6 +50,7 @@ function scmPort(prs: PullRequest[]): ScmPort & { calls: string[] } {
 function ciPort(
   runsByBranch: Record<string, string[]>,
   runsByPullRequest: Record<string, string[]> = {},
+  runsByCommit: Record<string, string[]> = {},
 ): CiPort & { queries: unknown[] } {
   const queries: unknown[] = [];
   return {
@@ -58,9 +59,11 @@ function ciPort(
     async runs(query?: RunQuery) {
       queries.push(query);
       const ids =
-        query?.pullRequestId !== undefined
-          ? (runsByPullRequest[query.pullRequestId] ?? [])
-          : (runsByBranch[query?.branch ?? ''] ?? []);
+        query?.sha !== undefined
+          ? (runsByCommit[query.sha] ?? [])
+          : query?.pullRequestId !== undefined
+            ? (runsByPullRequest[query.pullRequestId] ?? [])
+            : (runsByBranch[query?.branch ?? ''] ?? []);
       return ids.map((id) => ({
         id,
         pipelineId: 'p',
@@ -68,24 +71,27 @@ function ciPort(
         nativeStatus: 'ok',
         branch: query?.pullRequestId === undefined ? query?.branch : undefined,
         pullRequestId: query?.pullRequestId,
+        sha: query?.sha,
       }));
     },
   } as unknown as CiPort & { queries: unknown[] };
 }
 
-function deployPort(refs: string[]): DeployPort & { queries: unknown[] } {
+function deployPort(
+  deployed: (string | { ref: string; sha: string })[],
+): DeployPort & { queries: unknown[] } {
   const queries: unknown[] = [];
   return {
     queries,
     manifest: { provider: 'mem' } as DeployPort['manifest'],
     async deployments(query?: DeploymentQuery) {
       queries.push(query);
-      return refs.map((ref, i) => ({
+      return deployed.map((d, i) => ({
         id: `d${i}`,
         environment: 'prod',
         status: 'succeeded' as const,
         nativeStatus: 'ok',
-        ref,
+        ...(typeof d === 'string' ? { ref: d } : d),
       }));
     },
   } as unknown as DeployPort & { queries: unknown[] };
@@ -187,6 +193,44 @@ describe('traceIssue', () => {
     expect(none.missing.runs).toBe(
       `No CI run has been recorded for ${BRANCH}, nor for pull request 1869.`,
     );
+  });
+
+  it("finds a merged pull request's build on its target branch by the merge commit", async () => {
+    // Found live on BeeMaster: PR 1869 merged into dev as 8d5a750e and build 4284 on dev built it,
+    // yet trace said no CI run was recorded — the build was on neither the branch nor the PR ref.
+    const issues = issuesPort({});
+    const pr: PullRequest = {
+      id: 'pr-1',
+      number: '1869',
+      title: 'Trace me',
+      sourceBranch: BRANCH,
+      targetBranch: 'dev',
+      draft: false,
+      state: 'merged',
+      mergeSha: '8d5a750e',
+    };
+    const scm = scmPort([pr]);
+    const ci = ciPort({}, { '1869': ['pr-build-1'] }, { '8d5a750e': ['4284'] });
+    const trace = await traceIssue({ issues, scm, ci }, '7');
+    expect(trace.runs?.map((r) => r.id)).toEqual(['pr-build-1', '4284']);
+    expect(ci.queries[2]).toEqual({ branch: 'dev', sha: '8d5a750e', limit: TRACE_RUN_LIMIT });
+
+    // A deployment of the merged work is listed under the target branch: matched by the commit,
+    // and preferred to a deployment of the branch itself (a preview, say), which predates the merge.
+    const deploy = deployPort([BRANCH, { ref: 'dev', sha: '8d5a750e' }]);
+    const shipped = await traceIssue({ issues, scm, ci, deploy }, '7');
+    expect(shipped.deployment).toMatchObject({ id: 'd1', sha: '8d5a750e' });
+
+    // Nothing anywhere: the reason names all three places it looked.
+    const none = await traceIssue(
+      { issues, scm, ci: ciPort({}), deploy: deployPort(['main']) },
+      '7',
+    );
+    expect(none.missing.runs).toBe(
+      `No CI run has been recorded for ${BRANCH}, nor for pull request 1869, ` +
+        'nor for its merge commit 8d5a750e on dev.',
+    );
+    expect(none.missing.deployment).toContain('merge commit 8d5a750e');
   });
 
   it('stops at the branch for a container, and says why', async () => {

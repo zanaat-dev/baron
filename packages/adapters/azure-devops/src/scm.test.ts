@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   getPullRequestById: vi.fn(),
   getPullRequestWorkItemRefs: vi.fn(),
   updatePullRequest: vi.fn(),
+  getPullRequests: vi.fn(),
   getPolicyEvaluations: vi.fn(),
 }));
 
@@ -18,6 +19,7 @@ vi.mock('azure-devops-node-api', () => ({
       getPullRequestById: mocks.getPullRequestById,
       getPullRequestWorkItemRefs: mocks.getPullRequestWorkItemRefs,
       updatePullRequest: mocks.updatePullRequest,
+      getPullRequests: mocks.getPullRequests,
     }),
     getPolicyApi: async () => ({ rest: { get: mocks.getPolicyEvaluations } }),
   })),
@@ -328,6 +330,31 @@ describe('azure scm mergePullRequest', () => {
     await expect(t.mergePullRequest('9', {})).rejects.toMatchObject({
       code: 'MERGE_FAILED',
       message: expect.stringMatching(/abandoned PR 9/),
+    });
+  });
+});
+
+describe('azure scm findPullRequestByBranch', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('reads the merge commit a completed PR left on its target branch', async () => {
+    // Live shape (BeeMaster PR 1869): lastMergeCommit is the commit dev's build 4284 ran on.
+    mocks.getPullRequests.mockResolvedValue([
+      {
+        pullRequestId: 1869,
+        title: 'fix(tenants): fold Turkish İ/I in the global filter',
+        status: 3, // Completed
+        sourceRefName: 'refs/heads/bug/1555-x',
+        targetRefName: 'refs/heads/dev',
+        lastMergeCommit: { commitId: '8d5a750e' },
+      },
+    ]);
+    const pr = await transport().findPullRequestByBranch('bug/1555-x', 'all');
+    expect(pr).toMatchObject({
+      id: '1869',
+      targetBranch: 'dev',
+      state: 'merged',
+      mergeSha: '8d5a750e',
     });
   });
 });

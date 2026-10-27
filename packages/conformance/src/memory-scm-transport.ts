@@ -79,6 +79,9 @@ export function createMemoryScmTransport(opts: MemoryScmTransportOptions = {}): 
         targetBranch: input.targetBranch,
         draft: input.draft,
         state: 'open',
+        // Like both real providers, an open PR already reports a (trial) merge commit; the port must
+        // not pass it on until the PR has merged.
+        mergeSha: `sha-trial-${prSeq}`,
         ...(input.linkedIssueKey !== undefined ? { issueLinked: opts.linksIssues ?? true } : {}),
       };
       prs.push(pr);
@@ -120,8 +123,9 @@ export function createMemoryScmTransport(opts: MemoryScmTransportOptions = {}): 
     async mergePullRequest(pullRequestId: string, _options: MergeOptions) {
       const pr = prs.find((p) => p.id === pullRequestId);
       if (pr === undefined) throw new Error(`memory scm: PR '${pullRequestId}' not found`);
-      prs[prs.indexOf(pr)] = { ...pr, state: 'merged' as const };
-      return { pullRequestId, sha: `sha-merge-${pullRequestId}` };
+      const sha = `sha-merge-${pullRequestId}`;
+      prs[prs.indexOf(pr)] = { ...pr, state: 'merged' as const, mergeSha: sha };
+      return { pullRequestId, sha };
     },
 
     async getPullRequestStatus(pullRequestId: string) {

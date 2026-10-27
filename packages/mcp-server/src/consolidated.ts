@@ -283,15 +283,19 @@ export const CONSOLIDATED_CI_DEFINITIONS: readonly ToolDefinition[] = [
     name: TOOL_NAMES.ciRead,
     mutatesProvider: false,
     description:
-      'Read CI state. ops: `pipelines` (no args); `runs` (optional pipelineId/status/branch/limit, ' +
-      'default 50) with a normalized status; `run_get` (id) including per-stage status; `run_logs` ' +
-      '(runId, optional stageId/maxBytes) — a size-aware tail that reports whether it truncated.',
+      'Read CI state. ops: `pipelines` (no args); `runs` (optional pipelineId/status/branch/' +
+      'pullRequestId/sha/limit, default 50) with a normalized status — `sha` with `branch` finds the ' +
+      "build of a merged pull request's mergeSha on its target branch; `run_get` (id) including " +
+      'per-stage status; `run_logs` (runId, optional stageId/maxBytes) — a size-aware tail that ' +
+      'reports whether it truncated.',
     inputSchema: schemaOf(TOOL_NAMES.ciRead, {
       id: ID,
       runId: { type: 'string' },
       pipelineId: { type: 'string' },
       status: { type: 'string' },
       branch: { type: 'string' },
+      pullRequestId: { type: 'string' },
+      sha: { type: 'string' },
       stageId: { type: 'string' },
       maxBytes: { type: 'integer', minimum: 1 },
       limit: { type: 'integer', minimum: 1 },

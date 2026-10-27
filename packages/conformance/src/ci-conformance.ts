@@ -71,6 +71,22 @@ export function runCiConformance(target: CiConformanceTarget): void {
       expect(await adapter.runs({ pullRequestId: 'no-such-pull-request' })).toEqual([]);
     });
 
+    it('finds the runs that built a commit, and only those', async () => {
+      // How a merged pull request's build on its target branch is found: by the merge commit.
+      const { adapter } = target.build();
+      const all = await adapter.runs();
+      for (const run of all.filter((r) => r.sha !== undefined)) {
+        const found = await adapter.runs({ sha: run.sha });
+        expect(found.map((r) => r.id)).toContain(run.id);
+        for (const f of found) expect(f.sha).toBe(run.sha);
+        if (run.branch !== undefined) {
+          const onBranch = await adapter.runs({ branch: run.branch, sha: run.sha });
+          expect(onBranch.map((r) => r.id)).toContain(run.id);
+        }
+      }
+      expect(await adapter.runs({ sha: 'no-such-commit' })).toEqual([]);
+    });
+
     it('returns run detail with normalized stage statuses', async () => {
       const { adapter } = target.build();
       const runs = await adapter.runs();

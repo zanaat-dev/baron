@@ -9,14 +9,18 @@ const mocks = vi.hoisted(() => ({
   getRef: vi.fn(),
   createRef: vi.fn(),
   prGet: vi.fn(),
+  prList: vi.fn(),
   listReviews: vi.fn(),
   checksListForRef: vi.fn(),
   listWorkflowRuns: vi.fn(),
   combinedStatus: vi.fn(),
   // By default GitHub records no closing reference; a case that needs one says so.
-  graphql: vi.fn(async (_query: string, _variables?: Record<string, unknown>) => ({
-    node: { closingIssuesReferences: { nodes: [] as { number: number }[] } },
-  })),
+  // Typed `unknown`: the same mock answers several queries (closing references, a merge commit).
+  graphql: vi.fn(
+    async (_query: string, _variables?: Record<string, unknown>): Promise<unknown> => ({
+      node: { closingIssuesReferences: { nodes: [] as { number: number }[] } },
+    }),
+  ),
 }));
 
 vi.mock('octokit', () => ({
@@ -26,7 +30,12 @@ vi.mock('octokit', () => ({
     hook: { before: vi.fn(), error: vi.fn() },
     graphql: mocks.graphql,
     rest: {
-      pulls: { create: mocks.create, get: mocks.prGet, listReviews: mocks.listReviews },
+      pulls: {
+        create: mocks.create,
+        get: mocks.prGet,
+        list: mocks.prList,
+        listReviews: mocks.listReviews,
+      },
       git: { getRef: mocks.getRef, createRef: mocks.createRef },
       checks: { listForRef: mocks.checksListForRef },
       actions: { listWorkflowRunsForRepo: mocks.listWorkflowRuns },
@@ -414,5 +423,46 @@ describe('github PR body contradicting the relation', () => {
       body: 'This closes #62.',
     });
     expect(mocks.create).toHaveBeenCalled();
+  });
+});
+
+describe('github scm findPullRequestByBranch', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const listed = (mergedAt: string | null) => ({
+    data: [
+      {
+        number: 288,
+        title: 'feat: read an item comments',
+        html_url: 'https://example.test/pull/288',
+        state: mergedAt === null ? 'open' : 'closed',
+        merged_at: mergedAt,
+        draft: false,
+        base: { ref: 'main' },
+        // What the pinned REST version returns: no merge_commit_sha at all (found live).
+      },
+    ],
+  });
+
+  it('reads the merge commit of a merged PR through GraphQL, which REST no longer returns', async () => {
+    mocks.prList.mockResolvedValue(listed('2026-10-12T09:53:06Z'));
+    mocks.graphql.mockResolvedValueOnce({
+      repository: { pullRequest: { mergeCommit: { oid: '502364e' } } },
+    });
+    const pr = await transport().findPullRequestByBranch('task/237-x', 'all');
+    expect(pr).toMatchObject({
+      number: '288',
+      targetBranch: 'main',
+      state: 'merged',
+      mergeSha: '502364e',
+    });
+    expect(mocks.graphql.mock.calls[0]?.[1]).toEqual({ owner: 'o', repo: 'r', pr: 288 });
+  });
+
+  it('spends no call on the merge commit of a PR that has not merged', async () => {
+    mocks.prList.mockResolvedValue(listed(null));
+    const pr = await transport().findPullRequestByBranch('task/237-x', 'open');
+    expect(pr).toMatchObject({ state: 'open', mergeSha: undefined });
+    expect(mocks.graphql).not.toHaveBeenCalled();
   });
 });

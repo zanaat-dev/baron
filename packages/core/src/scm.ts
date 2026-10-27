@@ -67,6 +67,12 @@ export interface PullRequest {
    * `relates` is a mention in the body, not a link GitHub records.
    */
   readonly issueLinked?: boolean | undefined;
+  /**
+   * The commit the merge left on the target branch (Azure `lastMergeCommit`, GitHub
+   * `merge_commit_sha`): what the target branch's CI builds and deploys. Only a merged PR has one;
+   * before merging both providers report a trial merge that no target-branch build ever runs on.
+   */
+  readonly mergeSha?: string | undefined;
 }
 
 /** A normalized PR discussion thread reference. */
@@ -172,6 +178,11 @@ export interface NativePullRequest {
   readonly autoCompleteEnabled?: boolean | undefined;
   /** See {@link PullRequest.issueLinked}; the transport reads the link back from the provider. */
   readonly issueLinked?: boolean | undefined;
+  /**
+   * The provider's merge commit, reported as-is whatever the state; the port keeps it only for a
+   * merged PR (see {@link PullRequest.mergeSha}).
+   */
+  readonly mergeSha?: string | undefined;
 }
 
 export interface NativeThread {
@@ -448,19 +459,8 @@ export class BaseScmAdapter implements ScmPort {
       autoComplete,
     });
 
-    return {
-      id: native.id,
-      number: native.number,
-      title: native.title,
-      url: native.url,
-      sourceBranch: native.sourceBranch,
-      targetBranch: native.targetBranch,
-      draft: native.draft,
-      // A freshly created PR is open by definition — surface it uniformly with prForBranch results.
-      state: 'open',
-      autoCompleteEnabled: native.autoCompleteEnabled,
-      issueLinked: native.issueLinked,
-    };
+    // A freshly created PR is open by definition — surface it uniformly with prForBranch results.
+    return this.toPullRequest({ ...native, state: 'open' });
   }
 
   async markPrReady(pullRequestId: string): Promise<PullRequest> {
@@ -495,6 +495,9 @@ export class BaseScmAdapter implements ScmPort {
       state: native.state,
       autoCompleteEnabled: native.autoCompleteEnabled,
       issueLinked: native.issueLinked,
+      // One rule for every provider, so it lives here: an unmerged PR's merge commit is the trial
+      // merge, which nothing on the target branch ever built — reporting it would invite a false join.
+      mergeSha: native.state === 'merged' ? native.mergeSha : undefined,
     };
   }
 
@@ -503,17 +506,7 @@ export class BaseScmAdapter implements ScmPort {
     stateFilter: PrStateFilter = 'open',
   ): Promise<PullRequest | undefined> {
     const native = await this.transport.findPullRequestByBranch(sourceBranch, stateFilter);
-    if (native === undefined) return undefined;
-    return {
-      id: native.id,
-      number: native.number,
-      title: native.title,
-      url: native.url,
-      sourceBranch: native.sourceBranch,
-      targetBranch: native.targetBranch,
-      draft: native.draft,
-      state: native.state,
-    };
+    return native === undefined ? undefined : this.toPullRequest(native);
   }
 
   async addPullRequestThread(pullRequestId: string, body: string): Promise<PullRequestThread> {

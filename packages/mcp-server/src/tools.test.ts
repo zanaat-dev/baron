@@ -116,6 +116,25 @@ describe('ci tools', () => {
     expect(captured).toEqual([50, 5]);
   });
 
+  it('finds the runs that built a commit, on the granular and the consolidated surface', async () => {
+    const granular = await callCiTool(ciPort(), CI_TOOL_NAMES.runs, {
+      branch: 'main',
+      sha: 'sha-run-2',
+    });
+    expect(parse(granular.content[0]?.text ?? '[]')).toEqual([
+      expect.objectContaining({ id: '2', sha: 'sha-run-2' }),
+    ]);
+    const consolidated = await dispatchTool({ ci: ciPort() }, TOOL_NAMES.ciRead, {
+      op: 'runs',
+      branch: 'main',
+      sha: 'sha-run-2',
+    });
+    expect(consolidated.isError).toBeUndefined();
+    expect(parse(consolidated.content[0]?.text ?? '[]')).toEqual([
+      expect.objectContaining({ id: '2' }),
+    ]);
+  });
+
   it('advertises ci tools only when the ci port is bound', () => {
     expect(activeToolDefinitions({ ci: ciPort() }).some((t) => t.name === TOOL_NAMES.ciRead)).toBe(
       true,

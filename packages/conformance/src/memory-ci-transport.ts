@@ -83,6 +83,9 @@ export function createMemoryCiTransport(options: MemoryCiOptions = {}): CiTransp
       if (query.pullRequestId !== undefined) {
         result = result.filter((r) => r.pullRequestId === query.pullRequestId);
       }
+      if (query.sha !== undefined) {
+        result = result.filter((r) => r.sha === query.sha);
+      }
       return query.limit !== undefined ? result.slice(0, query.limit) : result;
     },
 

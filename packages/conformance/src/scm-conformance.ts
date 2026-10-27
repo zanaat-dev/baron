@@ -177,6 +177,24 @@ export function runScmConformance(target: ScmConformanceTarget): void {
       );
     });
 
+    it('reports a merge commit for a merged PR only, the one its merge returned', async () => {
+      const { adapter } = target.build();
+      const created = await adapter.createPullRequest({
+        title: 'PR',
+        sourceBranch: 'feature/land-me',
+        targetBranch: 'main',
+      });
+      // Before merging, a provider's merge commit is a trial merge nothing on the target branch
+      // built: joining on it would attach the wrong build, so it is not reported.
+      expect(created.mergeSha).toBeUndefined();
+      expect((await adapter.prForBranch('feature/land-me'))?.mergeSha).toBeUndefined();
+      const merged = await adapter.mergePr(created.id);
+      const found = await adapter.prForBranch('feature/land-me', 'merged');
+      expect(found?.state).toBe('merged');
+      if (merged.sha !== undefined) expect(found?.mergeSha).toBe(merged.sha);
+      if (found?.mergeSha !== undefined) expect(found.mergeSha.length).toBeGreaterThan(0);
+    });
+
     it('addPullRequestThread returns a thread reference', async () => {
       const { adapter } = target.build();
       const pr = await adapter.createPullRequest({

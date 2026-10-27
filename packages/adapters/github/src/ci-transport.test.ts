@@ -39,4 +39,15 @@ describe('github ci listRuns', () => {
     const runs = await createGithubCiTransport({ owner: 'o', repo: 'r', token: 'x' }).listRuns({});
     expect(runs[0]).toMatchObject({ id: '77', branch: 'main', sha: '5b3dbbe' });
   });
+
+  it('asks GitHub for the runs of a commit by head_sha, not a window filtered afterwards', async () => {
+    mocks.listWorkflowRunsForRepo.mockResolvedValue({ data: { workflow_runs: [] } });
+    await createGithubCiTransport({ owner: 'o', repo: 'r', token: 'x' }).listRuns({
+      branch: 'main',
+      sha: '502364e',
+    });
+    expect(mocks.listWorkflowRunsForRepo).toHaveBeenCalledWith(
+      expect.objectContaining({ branch: 'main', head_sha: '502364e' }),
+    );
+  });
 });
