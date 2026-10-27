@@ -117,6 +117,11 @@ export interface RunQuery {
    * never finds them; the adapter maps the id to that ref.
    */
   readonly pullRequestId?: string | undefined;
+  /**
+   * Runs that built this commit (see {@link Run.sha}). With `branch` it finds the build of a merge
+   * on its target branch, the one that matters once a pull request has landed.
+   */
+  readonly sha?: string | undefined;
   readonly status?: RunStatus | undefined;
   readonly limit?: number | undefined;
 }
@@ -265,7 +270,10 @@ export class BaseCiAdapter implements CiPort {
 
   async runs(query: RunQuery = {}): Promise<readonly Run[]> {
     const native = await this.transport.listRuns(query);
-    return native.map((n) => this.toRun(n));
+    // A provider without a commit filter scans a window and matches here; the port re-checks so a
+    // run that did not build the commit is never reported as its build, whatever the transport did.
+    const matching = query.sha === undefined ? native : native.filter((n) => n.sha === query.sha);
+    return matching.map((n) => this.toRun(n));
   }
 
   async run(id: string): Promise<RunDetail> {

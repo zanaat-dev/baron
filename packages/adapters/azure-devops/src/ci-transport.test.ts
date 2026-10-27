@@ -46,6 +46,31 @@ describe('azure ci listRuns', () => {
     expect(args[17]).toBe('refs/heads/task/2003-x'); // branchName, the server-side filter
   });
 
+  it('finds the build of a commit by scanning the branch window, since Azure has no commit filter', async () => {
+    // Live shape (BeeMaster): PR 1869 merged into dev as 8d5a750e, and build 4284 on dev built it.
+    mocks.getBuilds.mockResolvedValue([
+      {
+        id: 4290,
+        status: 2,
+        sourceBranch: 'refs/heads/dev',
+        sourceVersion: '1a2b3c4',
+        definition: { id: 59 },
+      },
+      {
+        id: 4284,
+        status: 2,
+        sourceBranch: 'refs/heads/dev',
+        sourceVersion: '8d5a750e',
+        definition: { id: 59 },
+      },
+    ]);
+    const runs = await transport().listRuns({ branch: 'dev', sha: '8d5a750e', limit: 5 });
+    expect(runs.map((r) => r.id)).toEqual(['4284']);
+    const args = mocks.getBuilds.mock.calls[0] as unknown[];
+    expect(args[12]).toBe(50); // top: the scan window, wider than the limit of 5
+    expect(args[17]).toBe('refs/heads/dev');
+  });
+
   it('maps a pull request to its merge ref, and reads the PR id back off a build on one', async () => {
     mocks.getBuilds.mockResolvedValue([
       { id: 4284, status: 32, sourceBranch: 'refs/pull/1869/merge', definition: { id: 59 } },

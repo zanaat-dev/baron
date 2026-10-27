@@ -146,7 +146,11 @@ export function createAzureDevOpsCiTransport(options: AzureDevOpsCiTransportOpti
     async listRuns(query: RunQuery): Promise<readonly NativeRun[]> {
       const build = await api();
       const definitions = query.pipelineId !== undefined ? [Number(query.pipelineId)] : undefined;
-      const top = query.limit ?? DEFAULT_RUN_LIMIT;
+      const limit = query.limit ?? DEFAULT_RUN_LIMIT;
+      // The build list has no commit filter, so a sha query scans the branch's recent window and
+      // matches sourceVersion below. A build older than the window is not found, and the caller
+      // reports it as not recorded rather than guessing.
+      const top = query.sha !== undefined ? Math.max(limit, DEFAULT_RUN_LIMIT) : limit;
       // getBuilds is positional. The branch has to reach Azure as a filter, not be applied here
       // afterwards: filtering the fetched window client-side meant `top` was spent on other
       // branches' builds, and a build queued a moment ago on the asked-for branch was invisible
@@ -180,10 +184,15 @@ export function createAzureDevOpsCiTransport(options: AzureDevOpsCiTransportOpti
       const runs = builds.map(toNativeRun);
       // The server-side filter is the real one; this only guards against a build whose source
       // Azure reports differently from the ref it was queried by.
-      if (query.pullRequestId !== undefined) {
-        return runs.filter((r) => r.pullRequestId === query.pullRequestId);
-      }
-      return query.branch !== undefined ? runs.filter((r) => r.branch === query.branch) : runs;
+      const onRef =
+        query.pullRequestId !== undefined
+          ? runs.filter((r) => r.pullRequestId === query.pullRequestId)
+          : query.branch !== undefined
+            ? runs.filter((r) => r.branch === query.branch)
+            : runs;
+      return query.sha !== undefined
+        ? onRef.filter((r) => r.sha === query.sha).slice(0, limit)
+        : onRef;
     },
 
     async getRun(id: string): Promise<NativeRunDetail> {

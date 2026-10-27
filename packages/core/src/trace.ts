@@ -40,10 +40,14 @@ export interface IssueTrace {
   readonly checks: PullRequestStatus | null;
   /**
    * The most recent CI runs for the item: those on the branch, then those that validate its pull
-   * request (providers build a PR on a ref of their own, so a branch query alone misses them).
+   * request (providers build a PR on a ref of their own, so a branch query alone misses them), then,
+   * once it has merged, those on the target branch that built its merge commit.
    */
   readonly runs: readonly Run[] | null;
-  /** The most recent deployment whose ref is the branch. */
+  /**
+   * The most recent deployment of the item's merge commit, or failing that the most recent one
+   * whose ref is the branch.
+   */
   readonly deployment: Deployment | null;
   /**
    * Why a part is null — the port is not bound, or the item has not reached that hop. Every null
@@ -99,6 +103,12 @@ export async function traceIssue(ports: TracePorts, id: string): Promise<IssueTr
       checks = await ports.scm.prStatus(pullRequest.id);
     }
   }
+  // Set only once the PR has merged (the port withholds a trial merge), so every join on it below
+  // is a join on what actually landed.
+  const merge =
+    pullRequest?.mergeSha === undefined
+      ? null
+      : { sha: pullRequest.mergeSha, targetBranch: pullRequest.targetBranch };
 
   let runs: readonly Run[] | null = null;
   if (ports.ci === undefined) {
@@ -112,18 +122,28 @@ export async function traceIssue(ports: TracePorts, id: string): Promise<IssueTr
       prId === undefined
         ? []
         : await ports.ci.runs({ pullRequestId: prId, limit: TRACE_RUN_LIMIT });
+    // Found live on BeeMaster: after a merge the build that matters runs on the target branch, on
+    // the merge commit, and neither query above can see it.
+    const onMerge =
+      merge === null
+        ? []
+        : await ports.ci.runs({
+            branch: merge.targetBranch,
+            sha: merge.sha,
+            limit: TRACE_RUN_LIMIT,
+          });
     const seen = new Set<string>();
     const found: Run[] = [];
-    for (const run of [...onBranch, ...onPullRequest]) {
+    for (const run of [...onBranch, ...onPullRequest, ...onMerge]) {
       if (seen.has(run.id)) continue;
       seen.add(run.id);
       found.push(run);
     }
     if (found.length === 0) {
-      missing.runs =
-        prId === undefined
-          ? `No CI run has been recorded for ${branch}.`
-          : `No CI run has been recorded for ${branch}, nor for pull request ${prId}.`;
+      const looked = [branch];
+      if (prId !== undefined) looked.push(`pull request ${prId}`);
+      if (merge !== null) looked.push(`its merge commit ${merge.sha} on ${merge.targetBranch}`);
+      missing.runs = `No CI run has been recorded for ${looked.join(', nor for ')}.`;
     } else {
       runs = found;
     }
@@ -133,14 +153,20 @@ export async function traceIssue(ports: TracePorts, id: string): Promise<IssueTr
   if (ports.deploy === undefined) {
     missing.deployment = DEPLOY_UNBOUND;
   } else {
-    // Joined on the ref only: a deployment of the merge commit on the default branch carries that
-    // branch's name, not this one's, and the core has no merge sha to match it by. Lossy, and said.
+    // A deployment of the merged work carries the target branch's name, not this one's, so once the
+    // PR has merged it is matched by the merge commit; the ref join covers branch deploys before it.
     const recent = await ports.deploy.deployments({ limit: TRACE_DEPLOYMENT_SCAN });
-    deployment = recent.find((d) => d.ref === branch) ?? null;
+    deployment =
+      (merge === null ? undefined : recent.find((d) => d.sha === merge.sha)) ??
+      recent.find((d) => d.ref === branch) ??
+      null;
     if (deployment === null) {
       missing.deployment =
-        `None of the last ${recent.length} deployment(s) references ${branch} as its ref ` +
-        '(a deployment of the merged commit is listed under the target branch, not here).';
+        merge === null
+          ? `None of the last ${recent.length} deployment(s) references ${branch} as its ref ` +
+            '(a deployment of the merged commit is listed under the target branch, not here).'
+          : `None of the last ${recent.length} deployment(s) deploys the merge commit ` +
+            `${merge.sha} or references ${branch} as its ref.`;
     }
   }
 

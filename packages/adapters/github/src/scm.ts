@@ -152,6 +152,17 @@ export function createGithubScmTransport(options: GithubTransportOptions): ScmTr
     return myLogin;
   };
 
+  /** The commit a merged pull request left on its base branch (squash, merge or rebase). */
+  async function mergeCommitOf(prNumber: number): Promise<string | undefined> {
+    const result = await octokit.graphql<{
+      repository: { pullRequest: { mergeCommit: { oid: string } | null } | null };
+    }>(
+      'query($owner: String!, $repo: String!, $pr: Int!) { repository(owner: $owner, name: $repo) { pullRequest(number: $pr) { mergeCommit { oid } } } }',
+      { owner, repo, pr: prNumber },
+    );
+    return result.repository.pullRequest?.mergeCommit?.oid;
+  }
+
   /**
    * A PR head's CI state, read through whichever door this credential can actually open.
    *
@@ -418,6 +429,10 @@ export function createGithubScmTransport(options: GithubTransportOptions): ScmTr
             ? data.find((pr) => pr.state === 'closed' && !isMerged(pr))
             : data[0];
       if (match === undefined) return undefined;
+      // Found live: the pinned REST version (2026-03-10) no longer returns merge_commit_sha on a pull
+      // request, listed or fetched; GraphQL still has it. Only a merged PR's is worth a call — the
+      // port drops an open PR's trial merge anyway.
+      const mergeSha = isMerged(match) ? await mergeCommitOf(match.number) : undefined;
       return {
         id: String(match.number),
         number: String(match.number),
@@ -427,6 +442,7 @@ export function createGithubScmTransport(options: GithubTransportOptions): ScmTr
         targetBranch: match.base.ref,
         draft: match.draft ?? false,
         state: prState(match),
+        mergeSha,
       };
     },
 

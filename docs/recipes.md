@@ -205,7 +205,7 @@ to text.
 | --- | --- | --- |
 | `issue.create` | `title`, `typeRole`, `body?`, `parentId?`, `labels?`, `initialRole?` | the issue |
 | `issue.get` | `id` | the issue (incl. `branchName`, the canonical `<prefix>/<id>-<slug>`) |
-| `issue.trace` | `id` | where the item is end to end: `{ issue, branch, pullRequest, checks, runs, deployment, missing }` — `runs` covers the branch and the pull request's own validation builds; each part `null` when a port is unbound or the item has not reached that hop, with the reason under `missing` |
+| `issue.trace` | `id` | where the item is end to end: `{ issue, branch, pullRequest, checks, runs, deployment, missing }` — `runs` covers the branch, the pull request's own validation builds and, once it has merged, the build of its merge commit on the target branch; `deployment` prefers a deployment of that merge commit; each part `null` when a port is unbound or the item has not reached that hop, with the reason under `missing` |
 | `issue.transition` | `id`, `role`, optional `fields` (answers for a gated provider's transition screen, keyed by its native field names) | the issue |
 | `issue.classify` | `id`, `role` | `{ kind: advance \| regress \| reopen \| noop, from, to }` — judge a move BEFORE making it |
 | `issue.reconcile` | `id` | the issue, with any role label Baron itself wrote cleared once the provider's own state contradicts it |
@@ -224,7 +224,7 @@ to text.
 | `scm.pr.create` | `title`, `sourceBranch`, `targetBranch?`, `body?`, `draft?` | the PR |
 | `scm.pr.thread` | `pullRequestId`, `body` | the thread |
 | `scm.pr.status` | `pullRequestId` | normalized PR status (state, reviewDecision, mergeable, mergeability: `mergeable` · `conflicts` · `computing` · `blocked_by_policy` · `failed` · `unknown`, checks) |
-| `scm.pr.find` | `sourceBranch`, `state?` (`open` default / `merged` / `closed` / `all`) | the most recent matching PR (with `state`), or `null` |
+| `scm.pr.find` | `sourceBranch`, `state?` (`open` default / `merged` / `closed` / `all`) | the most recent matching PR (with `state`, and `mergeSha` once merged: the commit the merge left on the target branch), or `null` |
 | `scm.pr.ready` | `pullRequestId` | the PR, taken out of draft |
 | `scm.pr.merge` | `pullRequestId`, `strategy?`, `deleteSourceBranch?` | `{ merged, sha }` — throws if the provider refuses |
 | `ci.run.trigger` | `pipelineId`, `ref?`, `variables?` | the triggered run |

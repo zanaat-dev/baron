@@ -54,7 +54,7 @@ merges it (`strategy`: `merge` | `squash` | `rebase`, defaulting to the provider
 conflicts, unmet branch policy, still a draft — comes back as `MERGE_FAILED` rather than a false success;
 `pr_status` tells you beforehand. `branch_create`/`pr_create` default the base
 branch to the repo default when omitted. `pr_for_branch { sourceBranch, state? }` returns the most
-recent PR for a branch (with its `state`) or null: `state:"open"` (default) is the idempotency probe
+recent PR for a branch (with its `state`; a merged one also carries `mergeSha`, the commit its merge left on the target branch) or null: `state:"open"` (default) is the idempotency probe
 — check it BEFORE `pr_create` so a re-run never duplicates a PR; `state:"merged"` is the drift probe
 (did this branch land while its item stayed in progress?). `pr_status` returns a
 normalized `PullRequestStatus`: `state` (`open|merged|closed|unknown`), `reviewDecision`
@@ -67,7 +67,7 @@ Ci / pipelines port: `baron_ci_read op=pipelines`, `baron_ci_read op=runs`, `bar
 `baron_ci_read op=run_logs`, `baron_ci_run op=trigger`, `baron_ci_run op=cancel`. Run state is the normalized
 `RunStatus` = `queued|running|succeeded|failed|canceled|skipped|waiting|unknown` (collapsed from each
 provider's native phase + result; per-stage status appears in `run_get`; `run_logs` is a size-aware
-tail). `runs` defaults `limit` 50. Use these to list/trigger/cancel CI and inspect why a run failed.
+tail). `runs` defaults `limit` 50 and filters by `pipelineId`, `branch`, `pullRequestId` or commit `sha` (`branch` + a PR's `mergeSha` finds the build of its merge). Use these to list/trigger/cancel CI and inspect why a run failed.
 
 Deploy / environments port: `baron_deploy_read op=environments`, `baron_deploy_read op=deployments`. Deployment
 state is the normalized `DeployStatus` = `pending|running|succeeded|failed|canceled|skipped|unknown`.

@@ -22,12 +22,12 @@ policy.
 
 | Tool | Port | Ops |
 | --- | --- | --- |
-| `baron_issue_read` | issues | `get` · `comments` (oldest first, to check before posting evidence twice) · `query` · `iterations` · `classify` · `trace` (issue → branch → PR + checks → CI runs → deployment in one read; unfilled parts are `null` and explained in `missing`) |
+| `baron_issue_read` | issues | `get` · `comments` (oldest first, to check before posting evidence twice) · `query` · `iterations` · `classify` · `trace` (issue → branch → PR + checks → CI runs, including a merged PR's build on its target branch → deployment in one read; unfilled parts are `null` and explained in `missing`) |
 | `baron_issue_write` | issues | `create` · `update` · `comment` · `assign` · `link` · `set_iteration` |
 | `baron_issue_move` | issues | `transition` · `reconcile` · `block` · `unblock` — the semantic role layer, plus the orthogonal blocked flag |
 | `baron_scm_read` | scm | `pr_status` · `pr_for_branch` |
 | `baron_scm_write` | scm | `branch_create` · `pr_create` · `pr_thread` · `pr_ready` · `pr_merge` |
-| `baron_ci_read` | ci | `pipelines` · `runs` · `run_get` · `run_logs` |
+| `baron_ci_read` | ci | `pipelines` · `runs` (by pipeline, branch, pull request or commit `sha`) · `run_get` · `run_logs` |
 | `baron_ci_run` | ci | `trigger` · `cancel` |
 | `baron_deploy_read` | deploy | `environments` · `deployments` |
 | `baron_notify_send` | notify | Send a message (`text`, optional `channel`, `threadKey`). |

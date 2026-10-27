@@ -465,6 +465,7 @@ export function createAzureDevOpsScmTransport(
         targetBranch: stripRef(pr.targetRefName),
         draft: pr.isDraft ?? false,
         state: toPrState(pr.status),
+        mergeSha: pr.lastMergeCommit?.commitId,
       };
     },
 

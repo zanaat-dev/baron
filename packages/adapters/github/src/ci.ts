@@ -116,6 +116,7 @@ export function createGithubCiTransport(options: GithubTransportOptions): CiTran
         owner,
         repo,
         ...(query.branch !== undefined ? { branch: query.branch } : {}),
+        ...(query.sha !== undefined ? { head_sha: query.sha } : {}),
         per_page: query.limit ?? DEFAULT_RUN_LIMIT,
       });
       const runs = data.workflow_runs.map(toNativeRun);
